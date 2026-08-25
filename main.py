@@ -412,13 +412,13 @@ def sync_offline_data(items: List[SyncItem], db: Session = Depends(get_db)):
             db.refresh(collection)
             
         # Add item if it doesn't exist
-        existing_item = db.query(models.QRCodeData).filter(
-            models.QRCodeData.collection_id == collection.id,
-            models.QRCodeData.qr_data == item.qr
+        existing_item = db.query(models.GarmentQRCode).filter(
+            models.GarmentQRCode.collection_id == collection.id,
+            models.GarmentQRCode.qr_data == item.qr
         ).first()
         
         if not existing_item:
-            new_item = models.QRCodeData(
+            new_item = models.GarmentQRCode(
                 collection_id=collection.id,
                 qr_data=item.qr,
                 quantity=item.qty
