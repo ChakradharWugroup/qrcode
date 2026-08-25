@@ -264,31 +264,50 @@ async def upload_qr_image(collection_id: str, file: UploadFile = File(...)):
         total_quantity = 0
         
         for text in texts:
-            if "款号:" in text or "款号" in text:
-                style_no = text.replace("款号:", "").replace("款号", "").strip()
-            elif "床次:" in text or "床次" in text:
-                bed_no = text.replace("床次:", "").replace("床次", "").strip()
-            elif "扎号:" in text or "扎号" in text:
-                bundle_no = text.replace("扎号:", "").replace("扎号", "").strip()
-            elif "数量" in text and "总数" not in text:
+            clean = text.strip()
+            if "款号" in clean:
+                style_no = clean.replace("款号", "").replace(":", "").replace("：", "").strip()
+            elif "床次" in clean:
+                bed_no = clean.replace("床次", "").replace(":", "").replace("：", "").strip()
+            elif "扎号" in clean:
+                bundle_no = clean.replace("扎号", "").replace(":", "").replace("：", "").strip()
+            elif "数量" in clean and "总数" not in clean:
                 try:
-                    quantity = int(''.join(filter(str.isdigit, text)))
+                    quantity = int(''.join(filter(str.isdigit, clean)))
                 except:
                     pass
-            elif "颜色:" in text or "颜色" in text:
-                color = text.replace("颜色:", "").replace("颜色", "").strip()
-            elif "总扎" in text:
+            elif "颜色" in clean:
+                color = clean.replace("颜色", "").replace(":", "").replace("：", "").strip()
+            elif "总扎" in clean:
                 try:
-                    total_bundles = int(''.join(filter(str.isdigit, text)))
+                    total_bundles = int(''.join(filter(str.isdigit, clean)))
                 except:
                     pass
-            elif "总数" in text:
+            elif "总数" in clean:
                 try:
-                    total_quantity = int(''.join(filter(str.isdigit, text)))
+                    total_quantity = int(''.join(filter(str.isdigit, clean)))
                 except:
                     pass
-            elif text.strip().upper() in ["S", "M", "L", "XL", "XXL", "XXXL"]:
-                size = text.strip().upper()
+            elif "尺码" in clean or "规格" in clean or "型号" in clean:
+                val = clean.replace("尺码", "").replace("规格", "").replace("型号", "").replace(":", "").replace("：", "").strip()
+                if val: size = val
+            elif clean.upper() in ["S", "M", "L", "XL", "XXL", "XXXL", "4XL", "5XL"]:
+                size = clean.upper()
+
+        if size == "Unknown":
+            import re
+            for text in texts:
+                clean_upper = text.strip().upper()
+                # Check for just the letter surrounded by noise (e.g. [L] or 'L')
+                extracted = re.sub(r'[^A-Z]', '', clean_upper)
+                if extracted in ["S", "M", "L", "XL", "XXL", "XXXL"] and len(clean_upper) <= 5:
+                    size = extracted
+                    break
+                # Check for standard number sizes like 170/92A
+                match = re.search(r'\d{3}/\d{2,3}[A-Z]?', clean_upper)
+                if match:
+                    size = match.group()
+                    break
 
         return JSONResponse({
             "qr_data": qr_data,
