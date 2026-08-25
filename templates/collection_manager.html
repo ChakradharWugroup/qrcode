@@ -172,7 +172,14 @@
                 body: formData
             });
 
-            if (!res.ok) throw new Error("Upload failed");
+            if (!res.ok) {
+                let errMsg = "Upload failed";
+                try {
+                    const errData = await res.json();
+                    if (errData.error) errMsg = errData.error;
+                } catch(e) {}
+                throw new Error(errMsg);
+            }
 
             const data = await res.json();
             
@@ -196,7 +203,7 @@
 
         } catch (e) {
             console.error(e);
-            alert("There was an error processing the image. Please try again.");
+            alert("Error processing image: " + e.message);
         } finally {
             btn.innerText = "Upload & Auto-Extract";
             btn.classList.remove("opacity-75", "cursor-not-allowed");

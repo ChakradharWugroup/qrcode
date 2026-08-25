@@ -237,70 +237,74 @@ async def upload_qr_image(collection_id: str, file: UploadFile = File(...)):
     nparr = np.frombuffer(contents, np.uint8)
     img = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
     
-    if img is None:
-        return JSONResponse({"error": "Invalid image"}, status_code=400)
+    try:
+        if img is None:
+            return JSONResponse({"error": "Invalid image format (e.g. unsupported HEIC) or corrupted file."}, status_code=400)
 
-    # 1. Extract QR Code
-    qr_data = "No QR detected"
-    decoded_objects = decode(img)
-    if decoded_objects:
-        qr_data = decoded_objects[0].data.decode("utf-8")
+        # 1. Extract QR Code
+        qr_data = "No QR detected"
+        decoded_objects = decode(img)
+        if decoded_objects:
+            qr_data = decoded_objects[0].data.decode("utf-8")
+            
+        # 2. Extract Text using OCR
+        result, elapse = ocr(img)
+        texts = []
+        if result:
+            texts = [item[1] for item in result]
+            
+        # 3. Simple parsing logic based on label format
+        style_no = "Unknown"
+        bed_no = "0"
+        bundle_no = "0"
+        quantity = 0
+        color = "Unknown"
+        size = "Unknown"
+        total_bundles = 0
+        total_quantity = 0
         
-    # 2. Extract Text using OCR
-    result, elapse = ocr(img)
-    texts = []
-    if result:
-        texts = [item[1] for item in result]
-        
-    # 3. Simple parsing logic based on label format
-    style_no = "Unknown"
-    bed_no = "0"
-    bundle_no = "0"
-    quantity = 0
-    color = "Unknown"
-    size = "Unknown"
-    total_bundles = 0
-    total_quantity = 0
-    
-    for text in texts:
-        if "款号:" in text or "款号" in text:
-            style_no = text.replace("款号:", "").replace("款号", "").strip()
-        elif "床次:" in text or "床次" in text:
-            bed_no = text.replace("床次:", "").replace("床次", "").strip()
-        elif "扎号:" in text or "扎号" in text:
-            bundle_no = text.replace("扎号:", "").replace("扎号", "").strip()
-        elif "数量" in text and "总数" not in text:
-            try:
-                quantity = int(''.join(filter(str.isdigit, text)))
-            except:
-                pass
-        elif "颜色:" in text or "颜色" in text:
-            color = text.replace("颜色:", "").replace("颜色", "").strip()
-        elif "总扎" in text:
-            try:
-                total_bundles = int(''.join(filter(str.isdigit, text)))
-            except:
-                pass
-        elif "总数" in text:
-            try:
-                total_quantity = int(''.join(filter(str.isdigit, text)))
-            except:
-                pass
-        elif text.strip().upper() in ["S", "M", "L", "XL", "XXL", "XXXL"]:
-            size = text.strip().upper()
+        for text in texts:
+            if "款号:" in text or "款号" in text:
+                style_no = text.replace("款号:", "").replace("款号", "").strip()
+            elif "床次:" in text or "床次" in text:
+                bed_no = text.replace("床次:", "").replace("床次", "").strip()
+            elif "扎号:" in text or "扎号" in text:
+                bundle_no = text.replace("扎号:", "").replace("扎号", "").strip()
+            elif "数量" in text and "总数" not in text:
+                try:
+                    quantity = int(''.join(filter(str.isdigit, text)))
+                except:
+                    pass
+            elif "颜色:" in text or "颜色" in text:
+                color = text.replace("颜色:", "").replace("颜色", "").strip()
+            elif "总扎" in text:
+                try:
+                    total_bundles = int(''.join(filter(str.isdigit, text)))
+                except:
+                    pass
+            elif "总数" in text:
+                try:
+                    total_quantity = int(''.join(filter(str.isdigit, text)))
+                except:
+                    pass
+            elif text.strip().upper() in ["S", "M", "L", "XL", "XXL", "XXXL"]:
+                size = text.strip().upper()
 
-    return JSONResponse({
-        "qr_data": qr_data,
-        "company_name": "江西大藤制衣有限公司",
-        "style_no": style_no,
-        "bed_no": bed_no,
-        "bundle_no": bundle_no,
-        "quantity": quantity,
-        "color": color,
-        "size": size,
-        "total_bundles": total_bundles,
-        "total_quantity": total_quantity
-    })
+        return JSONResponse({
+            "qr_data": qr_data,
+            "company_name": "江西大藤制衣有限公司",
+            "style_no": style_no,
+            "bed_no": bed_no,
+            "bundle_no": bundle_no,
+            "quantity": quantity,
+            "color": color,
+            "size": size,
+            "total_bundles": total_bundles,
+            "total_quantity": total_quantity
+        })
+    except Exception as e:
+        import traceback
+        return JSONResponse({"error": f"Server crash: {str(e)}"}, status_code=500)
 
 
 # Public URL that people see when they scan the Master QR
