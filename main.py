@@ -189,16 +189,8 @@ def export_csv(db: Session = Depends(get_db)):
 
 @app.get("/", response_class=HTMLResponse)
 def dashboard(request: Request, db: Session = Depends(get_db)):
-    # Automatically create a default MAIN collection if it doesn't exist
-    default_id = "MAIN"
-    collection = db.query(models.Collection).filter(models.Collection.id == default_id).first()
-    if not collection:
-        collection = models.Collection(id=default_id, name="Factory Master Collection")
-        db.add(collection)
-        db.commit()
-    
-    # Instantly redirect straight to the upload screen, skipping the dashboard
-    return RedirectResponse(url=f"/collections/{default_id}", status_code=303)
+    collections = db.query(models.Collection).order_by(models.Collection.created_at.desc()).all()
+    return templates.TemplateResponse(request=request, name="dashboard.html", context={"request": request, "collections": collections})
 
 @app.post("/collections/create")
 def create_collection(name: str = Form(...), db: Session = Depends(get_db)):

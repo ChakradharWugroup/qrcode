@@ -7,14 +7,14 @@
     <script src="https://cdn.tailwindcss.com"></script>
 </head>
 <body class="bg-gray-100 p-8">
-    <div class="max-w-4xl mx-auto">
+    <div class="max-w-4xl mx-auto bg-white p-6 md:p-8 rounded-lg shadow-md">
         <h1 class="text-3xl font-bold mb-8 text-gray-800">Master QR Manager Dashboard</h1>
-        
-        <div class="bg-white p-6 rounded-lg shadow-md mb-8">
-            <h2 class="text-xl font-semibold mb-4 text-gray-700">Create New Collection</h2>
+
+        <div class="mb-10">
+            <h2 class="text-xl font-semibold mb-4 text-gray-700">Create New Box / Collection</h2>
             <form action="/collections/create" method="POST" class="flex gap-4">
-                <input type="text" name="name" placeholder="e.g., Batch 2026031212 Delivery" required class="flex-1 border border-gray-300 rounded px-4 py-2">
-                <button type="submit" class="bg-blue-600 text-white px-6 py-2 rounded hover:bg-blue-700">Create</button>
+                <input type="text" name="name" required placeholder="e.g., Box 1, Box 2, Summer Batch..." class="flex-1 border border-gray-300 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                <button type="submit" class="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 font-semibold transition">Create</button>
             </form>
         </div>
 
