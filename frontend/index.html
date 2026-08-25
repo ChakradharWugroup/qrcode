@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Master QR Manager - Dashboard</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        // CHANGE THIS TO YOUR RENDER URL IN PRODUCTION (e.g., "https://qrcode-backend.onrender.com")
+        const API_BASE_URL = "http://192.168.1.105:8009"; 
+
+        async function fetchCollections() {
+            try {
+                const res = await fetch(`${API_BASE_URL}/api/collections`);
+                const collections = await res.json();
+                
+                const list = document.getElementById('collection-list');
+                list.innerHTML = '';
+                
+                if (collections.length === 0) {
+                    list.innerHTML = '<li class="py-4 text-gray-500">No collections yet.</li>';
+                    return;
+                }
+
+                collections.forEach(c => {
+                    list.innerHTML += `
+                        <li class="py-4 flex justify-between items-center">
+                            <div>
+                                <p class="font-medium text-gray-800">${c.name}</p>
+                                <p class="text-sm text-gray-500">ID: ${c.id} | ${c.qr_count} QR Codes</p>
+                            </div>
+                            <a href="collection.html?id=${c.id}" class="text-blue-600 hover:underline">Manage &rarr;</a>
+                        </li>
+                    `;
+                });
+            } catch (err) {
+                console.error("Error fetching collections:", err);
+            }
+        }
+
+        async function createCollection(event) {
+            event.preventDefault();
+            const name = document.getElementById('collection-name').value;
+            
+            try {
+                const res = await fetch(`${API_BASE_URL}/api/collections/create`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ name: name })
+                });
+                const data = await res.json();
+                window.location.href = `collection.html?id=${data.id}`;
+            } catch (err) {
+                alert("Error creating collection");
+            }
+        }
+
+        window.onload = fetchCollections;
+    </script>
+</head>
+<body class="bg-gray-100 p-8">
+    <div class="max-w-4xl mx-auto">
+        <h1 class="text-3xl font-bold mb-8 text-gray-800">Master QR Manager Dashboard</h1>
+        
+        <div class="bg-white p-6 rounded-lg shadow-md mb-8">
+            <h2 class="text-xl font-semibold mb-4 text-gray-700">Create New Collection</h2>
+            <form onsubmit="createCollection(event)" class="flex gap-4">
+                <input type="text" id="collection-name" placeholder="e.g., Batch 2026031212 Delivery" required class="flex-1 border border-gray-300 rounded px-4 py-2">
+                <button type="submit" class="bg-blue-600 text-white px-6 py-2 rounded hover:bg-blue-700">Create</button>
+            </form>
+        </div>
+
+        <div class="bg-white p-6 rounded-lg shadow-md">
+            <h2 class="text-xl font-semibold mb-4 text-gray-700">Your Collections</h2>
+            <ul id="collection-list" class="divide-y divide-gray-200">
+                <li class="py-4 text-gray-500">Loading collections...</li>
+            </ul>
+        </div>
+    </div>
+</body>
+</html>

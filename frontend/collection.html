@@ -1,0 +1,252 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Manage Collection</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        // CHANGE THIS TO YOUR RENDER URL IN PRODUCTION (e.g., "https://qrcode-backend.onrender.com")
+        const API_BASE_URL = "http://192.168.1.105:8009";
+        const urlParams = new URLSearchParams(window.location.search);
+        const collectionId = urlParams.get('id');
+
+        let currentSelectedFile = null;
+
+        async function loadCollection() {
+            try {
+                const res = await fetch(`${API_BASE_URL}/api/collections/${collectionId}`);
+                if (!res.ok) throw new Error("Collection not found");
+                const collection = await res.json();
+                
+                document.getElementById('collection-name').innerText = collection.name;
+                document.getElementById('collection-id').innerText = collection.id;
+                document.getElementById('master-qr-img').src = "data:image/png;base64," + collection.master_qr;
+                
+                // Adjust Master URL for frontend
+                const masterUrl = window.location.origin + "/q.html?id=" + collection.id;
+                document.getElementById('master-url').innerText = masterUrl;
+                document.getElementById('master-url').href = masterUrl;
+                
+                const countText = `Items in Collection (${collection.qr_codes.length})`;
+                document.getElementById('item-count').innerText = countText;
+
+                const list = document.getElementById('qr-list');
+                list.innerHTML = '';
+                if (collection.qr_codes.length === 0) {
+                    list.innerHTML = '<li class="text-sm text-gray-500">No QR codes added yet.</li>';
+                } else {
+                    collection.qr_codes.forEach((qr, index) => {
+                        list.innerHTML += `
+                            <li class="bg-gray-50 p-3 rounded border text-sm mb-3">
+                                <span class="font-bold text-lg">#${index + 1}</span> <br>
+                                Style: <span class="font-medium text-gray-800">${qr.style_no}</span> | 
+                                Size: <span class="font-medium text-gray-800">${qr.size}</span> | 
+                                Qty: <span class="font-medium text-blue-600">${qr.quantity}</span><br>
+                                <span class="text-gray-500 text-xs truncate block mt-1">Data: ${qr.qr_data}</span>
+                            </li>
+                        `;
+                    });
+                }
+            } catch (e) {
+                alert("Error loading collection");
+            }
+        }
+
+        function handleFileSelect(inputElement) {
+            if (inputElement.files && inputElement.files[0]) {
+                currentSelectedFile = inputElement.files[0];
+                const statusDiv = document.getElementById('file-status');
+                statusDiv.innerHTML = "✅ Selected: <strong>" + currentSelectedFile.name + "</strong>";
+                statusDiv.classList.remove('hidden');
+                
+                const btn = document.getElementById('upload-btn');
+                btn.disabled = false;
+                btn.classList.remove("opacity-50", "cursor-not-allowed");
+                
+                uploadAndParse();
+            }
+        }
+
+        async function uploadAndParse() {
+            if (!currentSelectedFile) return alert("Please select a file first!");
+
+            const btn = document.getElementById('upload-btn');
+            btn.innerText = "Extracting Data... Please Wait";
+            btn.classList.add("opacity-75", "cursor-not-allowed");
+            btn.disabled = true;
+
+            const formData = new FormData();
+            formData.append('file', currentSelectedFile);
+
+            try {
+                const res = await fetch(`${API_BASE_URL}/api/collections/${collectionId}/upload_qr`, {
+                    method: 'POST',
+                    body: formData
+                });
+
+                if (!res.ok) throw new Error("Upload failed");
+                const data = await res.json();
+                
+                document.getElementById('input-qr').value = data.qr_data || "";
+                document.getElementById('input-company').value = data.company_name || "";
+                document.getElementById('input-style').value = data.style_no || "";
+                document.getElementById('input-bed').value = data.bed_no || "";
+                document.getElementById('input-bundle').value = data.bundle_no || "";
+                document.getElementById('input-quantity').value = data.quantity || "";
+                document.getElementById('input-color').value = data.color || "";
+                document.getElementById('input-size').value = data.size || "";
+                document.getElementById('input-total-bundles').value = data.total_bundles || "";
+                document.getElementById('input-total-quantity').value = data.total_quantity || "";
+
+                alert("✅ Success! Data extracted. Please review the form below and click 'Add to Collection'.");
+                document.getElementById('manual-form').scrollIntoView({ behavior: 'smooth' });
+            } catch (e) {
+                alert("Error processing the image.");
+            } finally {
+                btn.innerText = "Upload & Auto-Extract";
+                btn.classList.remove("opacity-75", "cursor-not-allowed");
+                btn.disabled = false;
+            }
+        }
+
+        async function manualAdd(event) {
+            event.preventDefault();
+            const data = {
+                qr_data: document.getElementById('input-qr').value,
+                company_name: document.getElementById('input-company').value,
+                style_no: document.getElementById('input-style').value,
+                bed_no: document.getElementById('input-bed').value,
+                bundle_no: document.getElementById('input-bundle').value,
+                quantity: parseInt(document.getElementById('input-quantity').value) || 0,
+                color: document.getElementById('input-color').value,
+                size: document.getElementById('input-size').value,
+                total_bundles: parseInt(document.getElementById('input-total-bundles').value) || 0,
+                total_quantity: parseInt(document.getElementById('input-total-quantity').value) || 0
+            };
+
+            try {
+                const res = await fetch(`${API_BASE_URL}/api/collections/${collectionId}/add_qr`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(data)
+                });
+                if (res.ok) {
+                    alert("Added successfully!");
+                    document.getElementById('manual-form').reset();
+                    loadCollection();
+                } else {
+                    alert("Error adding item");
+                }
+            } catch (e) {
+                alert("Error adding item");
+            }
+        }
+
+        function printQRCode() {
+            const qrSrc = document.getElementById('master-qr-img').src;
+            const collectionName = document.getElementById('collection-name').innerText;
+            const printWindow = window.open('', '', 'width=600,height=600');
+            printWindow.document.write(`
+                <html>
+                    <head>
+                        <title>Print Master QR - ${collectionName}</title>
+                        <style>
+                            body { font-family: sans-serif; text-align: center; padding: 40px; }
+                            img { width: 300px; height: 300px; margin: 20px auto; display: block; }
+                            h1 { font-size: 28px; margin-bottom: 5px; color: #111; }
+                            p { color: #555; font-size: 18px; }
+                        </style>
+                    </head>
+                    <body>
+                        <h1>${collectionName}</h1>
+                        <p>Scan to view all collection items</p>
+                        <img src="${qrSrc}" />
+                        <script>
+                            setTimeout(() => {
+                                window.print();
+                                window.close();
+                            }, 250);
+                        <\/script>
+                    </body>
+                </html>
+            `);
+            printWindow.document.close();
+        }
+
+        window.onload = loadCollection;
+    </script>
+</head>
+<body class="bg-gray-100 p-4 md:p-8">
+    <div class="max-w-6xl mx-auto">
+        <a href="index.html" class="text-blue-600 hover:underline mb-4 inline-block">&larr; Back to Dashboard</a>
+        
+        <div class="flex flex-col md:flex-row gap-8">
+            <div class="flex-1">
+                <div class="bg-white p-4 md:p-6 rounded-lg shadow-md mb-8">
+                    <h2 id="collection-name" class="text-2xl font-bold mb-2 text-gray-800">Loading...</h2>
+                    <p class="text-gray-600 mb-6">Collection ID: <span id="collection-id" class="font-mono bg-gray-100 px-2 py-1 rounded">...</span></p>
+
+                    <h3 class="text-lg font-semibold mb-4 border-b pb-2">1. Auto-Upload Garment Tag (Photo)</h3>
+                    <form id="upload-form" class="mb-8 bg-blue-50 p-4 rounded-lg border border-blue-200">
+                        <p class="text-sm text-gray-600 mb-3 text-center">Select an option below to extract details automatically.</p>
+                        <div class="grid grid-cols-2 gap-3 mb-4">
+                            <label class="flex flex-col items-center justify-center bg-white border-2 border-blue-400 border-dashed rounded-lg p-4 cursor-pointer hover:bg-blue-100 transition shadow-sm">
+                                <span class="text-sm font-bold text-blue-800">Take Photo</span>
+                                <input type="file" id="camera-input" accept="image/*" capture="environment" class="hidden" onchange="handleFileSelect(this)" />
+                            </label>
+                            <label class="flex flex-col items-center justify-center bg-white border-2 border-blue-400 border-dashed rounded-lg p-4 cursor-pointer hover:bg-blue-100 transition shadow-sm">
+                                <span class="text-sm font-bold text-blue-800">Choose File</span>
+                                <input type="file" id="gallery-input" accept="image/*" class="hidden" onchange="handleFileSelect(this)" />
+                            </label>
+                        </div>
+                        <div id="file-status" class="text-sm text-center text-gray-700 hidden font-medium mb-3 bg-white p-2 rounded border border-gray-200"></div>
+                        <button type="button" id="upload-btn" onclick="uploadAndParse()" class="w-full bg-blue-600 text-white px-4 py-3 rounded-lg hover:bg-blue-700 font-bold transition opacity-50 cursor-not-allowed text-lg shadow-md" disabled>
+                            Upload & Auto-Extract
+                        </button>
+                    </form>
+
+                    <h3 class="text-lg font-semibold mb-4 border-b pb-2">2. Review & Add Item</h3>
+                    <form onsubmit="manualAdd(event)" id="manual-form" class="space-y-4">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700">QR Code URL/Data</label>
+                            <input type="text" id="input-qr" required class="mt-1 w-full border border-gray-300 rounded px-3 py-2">
+                        </div>
+                        <div class="grid grid-cols-2 gap-4">
+                            <div><label class="block text-sm">Company Name</label><input type="text" id="input-company" class="mt-1 w-full border rounded px-3 py-2"></div>
+                            <div><label class="block text-sm">Style No</label><input type="text" id="input-style" class="mt-1 w-full border rounded px-3 py-2"></div>
+                            <div><label class="block text-sm">Bed No</label><input type="text" id="input-bed" class="mt-1 w-full border rounded px-3 py-2"></div>
+                            <div><label class="block text-sm">Bundle No</label><input type="text" id="input-bundle" class="mt-1 w-full border rounded px-3 py-2"></div>
+                            <div><label class="block text-sm font-bold text-blue-700">Quantity</label><input type="number" id="input-quantity" required class="mt-1 w-full border-2 border-blue-400 rounded px-3 py-2 bg-blue-50"></div>
+                            <div><label class="block text-sm">Color</label><input type="text" id="input-color" class="mt-1 w-full border rounded px-3 py-2"></div>
+                            <div><label class="block text-sm">Size</label><input type="text" id="input-size" class="mt-1 w-full border rounded px-3 py-2"></div>
+                        </div>
+                        <div class="grid grid-cols-2 gap-4 pt-2 border-t mt-4">
+                            <div><label class="block text-sm">Total Bundles</label><input type="number" id="input-total-bundles" class="mt-1 w-full border rounded px-3 py-2"></div>
+                            <div><label class="block text-sm">Total Quantity</label><input type="number" id="input-total-quantity" class="mt-1 w-full border rounded px-3 py-2"></div>
+                        </div>
+                        <button type="submit" class="w-full bg-green-600 text-white px-4 py-3 rounded-lg hover:bg-green-700 font-bold text-lg mt-4 shadow-md transition">Add to Collection</button>
+                    </form>
+                </div>
+            </div>
+
+            <div class="w-full md:w-1/3">
+                <div class="bg-white p-6 rounded-lg shadow-md mb-6 text-center border-4 border-blue-500">
+                    <h3 class="text-xl font-bold mb-2 text-blue-800">MASTER QR CODE</h3>
+                    <img id="master-qr-img" src="" alt="Master QR" class="mx-auto w-48 h-48 mb-4">
+                    <p class="text-sm text-gray-600 mb-2">Scan this to view the entire collection!</p>
+                    <a id="master-url" href="#" target="_blank" class="text-blue-600 text-sm hover:underline font-mono break-all">...</a>
+                    <button onclick="printQRCode()" class="mt-4 bg-gray-800 text-white px-4 py-2 rounded hover:bg-gray-900 w-full font-bold shadow flex items-center justify-center">
+                        Print QR Code
+                    </button>
+                </div>
+
+                <div class="bg-white p-4 rounded-lg shadow-md">
+                    <h3 id="item-count" class="font-semibold mb-3 border-b pb-2">Items in Collection (0)</h3>
+                    <ul id="qr-list" class="space-y-3"></ul>
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

@@ -1,7 +1,8 @@
 from fastapi import FastAPI, Depends, Request, Form, UploadFile, File
-from fastapi.responses import HTMLResponse, RedirectResponse
+from fastapi.responses import HTMLResponse, RedirectResponse, JSONResponse
 from fastapi.templating import Jinja2Templates
 from fastapi.staticfiles import StaticFiles
+from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy.orm import Session
 from io import BytesIO
 import qrcode
@@ -10,16 +11,159 @@ import cv2
 import numpy as np
 from pyzbar.pyzbar import decode
 from rapidocr_onnxruntime import RapidOCR
+import os
 
 import models, schemas
 from database import engine, get_db
 
-# Create the database tables
 models.Base.metadata.create_all(bind=engine)
 
 app = FastAPI(title="Master QR Manager")
+
+# Add CORS so Vercel can talk to Render
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"], # Change this to your Vercel URL in production
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
 templates = Jinja2Templates(directory="templates")
 ocr = RapidOCR()
+
+# ==========================================
+# REST API ENDPOINTS (FOR VERCEL FRONTEND)
+# ==========================================
+
+@app.get("/api/collections")
+def api_get_collections(db: Session = Depends(get_db)):
+    collections = db.query(models.Collection).all()
+    # return list of dictionaries with length of qr_codes
+    return [
+        {
+            "id": c.id,
+            "name": c.name,
+            "qr_count": len(c.qr_codes)
+        } for c in collections
+    ]
+
+@app.post("/api/collections/create")
+def api_create_collection(collection: schemas.CollectionCreate, db: Session = Depends(get_db)):
+    db_collection = models.Collection(name=collection.name)
+    db.add(db_collection)
+    db.commit()
+    db.refresh(db_collection)
+    return {"id": db_collection.id, "name": db_collection.name}
+
+@app.get("/api/collections/{collection_id}")
+def api_get_collection(collection_id: str, request: Request, db: Session = Depends(get_db)):
+    c = db.query(models.Collection).filter(models.Collection.id == collection_id).first()
+    if not c:
+        return JSONResponse({"error": "Not found"}, status_code=404)
+        
+    master_url = f"https://{request.headers.get('host')}/q/{c.id}" # Will be updated in frontend
+    qr = qrcode.make(master_url)
+    buffered = BytesIO()
+    qr.save(buffered, format="PNG")
+    master_qr_base64 = base64.b64encode(buffered.getvalue()).decode("utf-8")
+
+    return {
+        "id": c.id,
+        "name": c.name,
+        "master_qr": master_qr_base64,
+        "qr_codes": [
+            {
+                "id": qr.id,
+                "qr_data": qr.qr_data,
+                "style_no": qr.style_no,
+                "size": qr.size,
+                "quantity": qr.quantity,
+                "company_name": qr.company_name,
+                "bed_no": qr.bed_no,
+                "bundle_no": qr.bundle_no,
+                "color": qr.color,
+                "total_bundles": qr.total_bundles,
+                "total_quantity": qr.total_quantity
+            } for qr in c.qr_codes
+        ]
+    }
+
+@app.post("/api/collections/{collection_id}/add_qr")
+def api_add_qr(collection_id: str, item: schemas.GarmentQRCodeCreate, db: Session = Depends(get_db)):
+    db_qr = models.GarmentQRCode(
+        collection_id=collection_id,
+        qr_data=item.qr_data,
+        company_name=item.company_name,
+        style_no=item.style_no,
+        bed_no=item.bed_no,
+        bundle_no=item.bundle_no,
+        quantity=item.quantity,
+        color=item.color,
+        size=item.size,
+        total_bundles=item.total_bundles,
+        total_quantity=item.total_quantity
+    )
+    db.add(db_qr)
+    db.commit()
+    return {"status": "success"}
+
+@app.post("/api/collections/{collection_id}/upload_qr")
+async def api_upload_qr(collection_id: str, file: UploadFile = File(...)):
+    contents = await file.read()
+    nparr = np.frombuffer(contents, np.uint8)
+    img = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
+    
+    if img is None:
+        return JSONResponse({"error": "Invalid image"}, status_code=400)
+
+    qr_data = "No QR detected"
+    decoded_objects = decode(img)
+    if decoded_objects:
+        qr_data = decoded_objects[0].data.decode("utf-8")
+        
+    result, elapse = ocr(img)
+    texts = [item[1] for item in result] if result else []
+        
+    style_no, bed_no, bundle_no, quantity, color, size, total_bundles, total_quantity = "Unknown", "0", "0", 0, "Unknown", "Unknown", 0, 0
+    
+    for text in texts:
+        if "款号:" in text or "款号" in text:
+            style_no = text.replace("款号:", "").replace("款号", "").strip()
+        elif "床次:" in text or "床次" in text:
+            bed_no = text.replace("床次:", "").replace("床次", "").strip()
+        elif "扎号:" in text or "扎号" in text:
+            bundle_no = text.replace("扎号:", "").replace("扎号", "").strip()
+        elif "数量" in text and "总数" not in text:
+            try: quantity = int(''.join(filter(str.isdigit, text)))
+            except: pass
+        elif "颜色:" in text or "颜色" in text:
+            color = text.replace("颜色:", "").replace("颜色", "").strip()
+        elif "总扎" in text:
+            try: total_bundles = int(''.join(filter(str.isdigit, text)))
+            except: pass
+        elif "总数" in text:
+            try: total_quantity = int(''.join(filter(str.isdigit, text)))
+            except: pass
+        elif text.strip().upper() in ["S", "M", "L", "XL", "XXL", "XXXL"]:
+            size = text.strip().upper()
+
+    return {
+        "qr_data": qr_data,
+        "company_name": "江西大藤制衣有限公司",
+        "style_no": style_no,
+        "bed_no": bed_no,
+        "bundle_no": bundle_no,
+        "quantity": quantity,
+        "color": color,
+        "size": size,
+        "total_bundles": total_bundles,
+        "total_quantity": total_quantity
+    }
+
+# ==========================================
+# OLD JINJA2 ROUTES (Keep for local testing)
+# ==========================================
 
 @app.get("/", response_class=HTMLResponse)
 def dashboard(request: Request, db: Session = Depends(get_db)):
