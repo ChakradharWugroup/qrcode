@@ -28,7 +28,7 @@ class GarmentQRCode(Base):
     id = Column(Integer, primary_key=True, index=True)
     collection_id = Column(String(255), ForeignKey("collections.id"))
     
-    qr_data = Column(String(1000), index=True) # The actual decoded URL/text from the QR
+    qr_data = Column(String(255), index=True) # The actual decoded URL/text from the QR
     
     # Label specific data
     company_name = Column(String(255), default="江西大藤制衣有限公司")
