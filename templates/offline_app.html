@@ -299,7 +299,7 @@
             document.querySelectorAll('[data-i18n]').forEach(el => {
                 const key = el.getAttribute('data-i18n');
                 if (i18n[lang][key]) {
-                    el.innerText = i18n[lang][key];
+                    el.innerHTML = i18n[lang][key];
                 }
             });
 
@@ -311,7 +311,6 @@
             });
             
             updateDashboardStats();
-        if (typeof setLanguage === "function") setLanguage(currentLang);
             if(!document.getElementById('screen-scanner').classList.contains('hidden')){
                 renderTable();
             }
@@ -324,7 +323,6 @@
         // Load Settings on Boot
         let lastCurrentBox = localStorage.getItem('current_box') || '';
         updateDashboardStats();
-        if (typeof setLanguage === "function") setLanguage(currentLang);
 
         function updateDashboardStats() {
             document.getElementById('total-scans-badge').innerText = localDB.length;
@@ -352,10 +350,10 @@
                 div.innerHTML = `
                     <div>
                         <p class="font-bold text-blue-800">${box}</p>
-                        <p class="text-xs text-gray-600">${count} ${i18n[currentLang]["items_scanned"]}</p>
+                        <p class="text-xs text-gray-600">${count} <span data-i18n="items_scanned"></span></p>
                     </div>
                     <button onclick="resumeBox('${box}')" class="bg-blue-100 text-blue-700 px-4 py-2 rounded text-sm font-bold border border-blue-300 hover:bg-blue-200">
-                        ${i18n[currentLang]["open_btn"]}
+                        Open
                     </button>
                 `;
                 listContainer.appendChild(div);
@@ -474,7 +472,6 @@
             document.getElementById('screen-scanner').classList.add('hidden');
             document.getElementById('screen-dashboard').classList.remove('hidden');
             updateDashboardStats();
-        if (typeof setLanguage === "function") setLanguage(currentLang);
         }
 
         function startScanner() {
@@ -568,7 +565,6 @@
                 localStorage.setItem('offline_qr_db', JSON.stringify(localDB));
                 renderTable();
                 updateDashboardStats();
-        if (typeof setLanguage === "function") setLanguage(currentLang);
             }
         }
 
@@ -599,7 +595,6 @@
                     localStorage.setItem('offline_qr_db', JSON.stringify(localDB));
                     alert(`Successfully pushed ${unsynced.length} items to the cloud!`);
                     updateDashboardStats();
-        if (typeof setLanguage === "function") setLanguage(currentLang);
                 } else {
                     alert("Server error. Could not push to cloud.");
                 }
@@ -620,7 +615,6 @@
                 localDB = [];
                 localStorage.setItem('offline_qr_db', JSON.stringify(localDB));
                 updateDashboardStats();
-        if (typeof setLanguage === "function") setLanguage(currentLang);
                 localStorage.removeItem('current_box');
                 alert("Database cleared from phone.");
             }
@@ -657,11 +651,16 @@
             ind.innerText = "OFFLINE MODE";
             ind.classList.replace('bg-green-500', 'bg-yellow-500');
         });
+
         if (!navigator.onLine) {
             const ind = document.getElementById('status-indicator');
             ind.innerText = "OFFLINE MODE";
             ind.classList.replace('bg-green-500', 'bg-yellow-500');
         }
+        
+        // Apply language on startup
+        setLanguage(currentLang);
+
     </script>
 </body>
 </html>
