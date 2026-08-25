@@ -263,50 +263,55 @@ async def upload_qr_image(collection_id: str, file: UploadFile = File(...)):
         total_bundles = 0
         total_quantity = 0
         
-        for text in texts:
+        for i, text in enumerate(texts):
             clean = text.strip()
             if "款号" in clean:
                 style_no = clean.replace("款号", "").replace(":", "").replace("：", "").strip()
+                if not style_no and i + 1 < len(texts): style_no = texts[i+1].strip()
             elif "床次" in clean:
                 bed_no = clean.replace("床次", "").replace(":", "").replace("：", "").strip()
+                if not bed_no and i + 1 < len(texts): bed_no = texts[i+1].strip()
             elif "扎号" in clean:
                 bundle_no = clean.replace("扎号", "").replace(":", "").replace("：", "").strip()
+                if not bundle_no and i + 1 < len(texts): bundle_no = texts[i+1].strip()
             elif "数量" in clean and "总数" not in clean:
-                try:
-                    quantity = int(''.join(filter(str.isdigit, clean)))
-                except:
-                    pass
+                try: quantity = int(''.join(filter(str.isdigit, clean)))
+                except: pass
             elif "颜色" in clean:
                 color = clean.replace("颜色", "").replace(":", "").replace("：", "").strip()
+                if not color and i + 1 < len(texts): color = texts[i+1].strip()
             elif "总扎" in clean:
-                try:
-                    total_bundles = int(''.join(filter(str.isdigit, clean)))
-                except:
-                    pass
+                try: total_bundles = int(''.join(filter(str.isdigit, clean)))
+                except: pass
             elif "总数" in clean:
-                try:
-                    total_quantity = int(''.join(filter(str.isdigit, clean)))
-                except:
-                    pass
-            elif "尺码" in clean or "规格" in clean or "型号" in clean:
-                val = clean.replace("尺码", "").replace("规格", "").replace("型号", "").replace(":", "").replace("：", "").strip()
-                if val: size = val
-            elif clean.upper() in ["S", "M", "L", "XL", "XXL", "XXXL", "4XL", "5XL"]:
+                try: total_quantity = int(''.join(filter(str.isdigit, clean)))
+                except: pass
+            elif "尺码" in clean or "规格" in clean or "型号" in clean or "SIZE" in clean.upper():
+                val = clean.replace("尺码", "").replace("规格", "").replace("型号", "").replace("SIZE", "").replace("size", "").replace(":", "").replace("：", "").strip()
+                if val: 
+                    size = val
+                elif i + 1 < len(texts):
+                    # Dynamically grab the VERY NEXT box of text if this box is just the label!
+                    size = texts[i+1].replace(":", "").replace("：", "").strip()
+            elif clean.upper() in ["S", "M", "L", "XL", "XXL", "XXXL", "4XL", "5XL", "均码"]:
                 size = clean.upper()
 
         if size == "Unknown":
             import re
             for text in texts:
                 clean_upper = text.strip().upper()
-                # Check for just the letter surrounded by noise (e.g. [L] or 'L')
-                extracted = re.sub(r'[^A-Z]', '', clean_upper)
-                if extracted in ["S", "M", "L", "XL", "XXL", "XXXL"] and len(clean_upper) <= 5:
+                # Dynamically match isolated standard sizes even with heavy noise
+                extracted = re.sub(r'[^A-Z0-9]', '', clean_upper)
+                if extracted in ["S", "M", "L", "XL", "XXL", "XXXL", "3XL", "4XL", "5XL"] and len(clean_upper) <= 6:
                     size = extracted
                     break
-                # Check for standard number sizes like 170/92A
+                # Dynamically match standard height/chest sizes like 170/92A
                 match = re.search(r'\d{3}/\d{2,3}[A-Z]?', clean_upper)
                 if match:
                     size = match.group()
+                    break
+                if "均码" in clean_upper:
+                    size = "均码"
                     break
 
         return JSONResponse({
