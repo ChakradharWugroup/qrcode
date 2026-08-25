@@ -16,5 +16,5 @@ RUN pip install --no-cache-dir -r requirements.txt
 # Copy the rest of the app
 COPY . .
 
-# Run Uvicorn
-CMD uvicorn main:app --host 0.0.0.0 --port ${PORT:-8000}
+# Run Uvicorn (Hugging Face Spaces uses port 7860 by default)
+CMD uvicorn main:app --host 0.0.0.0 --port ${PORT:-7860}
