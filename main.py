@@ -21,6 +21,8 @@ models.Base.metadata.create_all(bind=engine)
 
 app = FastAPI(title="Master QR Manager")
 
+from fastapi.staticfiles import StaticFiles
+
 # Add CORS so Vercel can talk to Render
 app.add_middleware(
     CORSMiddleware,
@@ -30,6 +32,7 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+app.mount("/static", StaticFiles(directory="static"), name="static")
 templates = Jinja2Templates(directory="templates")
 # ocr = RapidOCR() # AI OCR Disabled
 

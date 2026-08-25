@@ -11,6 +11,16 @@
             overflow-x: auto;
         }
     </style>
+
+    <!-- PWA Setup -->
+    <link rel="manifest" href="/static/manifest.json">
+    <meta name="theme-color" content="#2563eb">
+    <link rel="apple-touch-icon" href="/static/icon.png">
+    <script>
+      if ('serviceWorker' in navigator) {
+        navigator.serviceWorker.register('/static/sw.js');
+      }
+    </script>
 </head>
 <body class="bg-gray-100 p-4 md:p-8">
     <div class="max-w-7xl mx-auto">
