@@ -152,13 +152,6 @@
             document.getElementById('display-current-box').innerText = currentBox;
             document.getElementById('table-box-name').innerText = currentBox;
             
-            // Generate Master QR Code visually for printing Box Label
-            new QRious({
-                element: document.getElementById('master-qr-canvas'),
-                value: `BOX_LABEL:${currentBox}`,
-                size: 250
-            });
-
             document.getElementById('screen-dashboard').classList.add('hidden');
             document.getElementById('screen-scanner').classList.remove('hidden');
             
@@ -176,6 +169,31 @@
             document.body.appendChild(link);
             link.click();
             document.body.removeChild(link);
+        }
+
+        function updateMasterQR(boxItems) {
+            let totalQty = 0;
+            let itemList = "";
+
+            boxItems.forEach(item => {
+                totalQty += parseInt(item.qty, 10) || 0;
+                itemList += `${item.qr} : ${item.qty}\n`;
+            });
+
+            let qrText = `Box: ${currentBox}\nUnique TIDs: ${boxItems.length}\nTotal Qty: ${totalQty}\n---\n${itemList}`;
+            
+            // Safety limit to prevent QR code from crashing if someone scans 500 items
+            if (qrText.length > 2000) {
+                qrText = qrText.substring(0, 2000) + "\n...[TRUNCATED]";
+            }
+
+            // Draw QR
+            new QRious({
+                element: document.getElementById('master-qr-canvas'),
+                value: qrText,
+                size: 250,
+                level: 'L' // Low error correction maximizes data capacity
+            });
         }
 
         function goToDashboard() {
@@ -256,6 +274,9 @@
             // Only show items for CURRENT BOX
             const boxItems = localDB.filter(item => item.box === currentBox);
             
+            // Re-draw the master QR code with the latest data
+            updateMasterQR(boxItems);
+
             if (boxItems.length === 0) {
                 tbody.innerHTML = `<tr><td colspan="4" class="p-4 text-center text-gray-500">No items in ${currentBox} yet.</td></tr>`;
                 return;
