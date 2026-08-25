@@ -1,10 +1,11 @@
-const CACHE_NAME = 'qr-offline-v1';
+const CACHE_NAME = 'qr-offline-v2';
 const ASSETS = [
   '/offline',
   '/static/icon.png',
   '/static/manifest.json',
   'https://cdn.tailwindcss.com',
-  'https://unpkg.com/html5-qrcode'
+  'https://unpkg.com/html5-qrcode',
+  'https://cdnjs.cloudflare.com/ajax/libs/qrious/4.0.2/qrious.min.js'
 ];
 
 self.addEventListener('install', (e) => {
