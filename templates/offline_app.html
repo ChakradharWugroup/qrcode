@@ -38,18 +38,22 @@
 
     <!-- SCREEN 1: DASHBOARD -->
     <div id="screen-dashboard" class="max-w-md mx-auto p-4 space-y-6 mt-10">
-        <div class="bg-white p-6 rounded-lg shadow-md border-t-4 border-blue-500">
-            <h2 class="text-2xl font-bold mb-4 text-gray-800">Create / Select Box</h2>
-            <p class="text-gray-600 text-sm mb-4">Enter a box number to start scanning tags into it.</p>
-            <input type="text" id="box-name" placeholder="e.g., Box 1, Box 2" class="w-full border-2 border-gray-300 rounded-lg px-4 py-3 font-bold text-blue-700 mb-6">
-            <button onclick="goToScanner()" class="w-full bg-blue-600 text-white py-3 rounded-lg font-bold text-xl hover:bg-blue-700 transition shadow">
-                Start Scanning &rarr;
-            </button>
+        
+        <button onclick="createNewBox()" class="w-full bg-blue-600 text-white py-4 rounded-lg font-bold text-xl hover:bg-blue-700 transition shadow-lg flex justify-center items-center">
+            <svg class="w-6 h-6 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
+            Start New Box
+        </button>
+        
+        <div class="bg-white p-6 rounded-lg shadow-md">
+            <h2 class="text-lg font-bold mb-2 text-gray-800 border-b pb-2">Your Boxes</h2>
+            <div id="dashboard-box-list" class="space-y-2 mt-3 max-h-64 overflow-y-auto pr-2">
+                <!-- Javascript will render the list of boxes here -->
+            </div>
         </div>
         
         <div class="bg-white p-6 rounded-lg shadow-md">
-            <h2 class="text-lg font-bold mb-4 text-gray-800">Database Management</h2>
-            <p class="text-gray-600 text-sm mb-4">Total Scans Saved: <span id="total-scans-badge" class="font-bold text-blue-600">0</span></p>
+            <h2 class="text-lg font-bold mb-4 text-gray-800">Database Options</h2>
+            <p class="text-gray-600 text-sm mb-4">Total Factory Scans: <span id="total-scans-badge" class="font-bold text-blue-600">0</span></p>
             <button onclick="exportCSV()" class="w-full bg-gray-800 text-white py-3 rounded-lg font-bold hover:bg-gray-900 transition flex justify-center items-center shadow">
                 <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
                 Export All Data (CSV)
@@ -139,21 +143,69 @@
         let localDB = JSON.parse(localStorage.getItem('offline_qr_db')) || [];
         
         // Load Settings on Boot
-        document.getElementById('box-name').value = localStorage.getItem('current_box') || '';
+        let lastCurrentBox = localStorage.getItem('current_box') || '';
         updateDashboardStats();
 
         function updateDashboardStats() {
             document.getElementById('total-scans-badge').innerText = localDB.length;
+            
+            const listContainer = document.getElementById('dashboard-box-list');
+            listContainer.innerHTML = '';
+            
+            const boxMap = {};
+            localDB.forEach(item => {
+                if (!boxMap[item.box]) { boxMap[item.box] = 0; }
+                boxMap[item.box]++;
+            });
+            
+            const uniqueBoxes = Object.keys(boxMap).sort((a,b) => b.localeCompare(a));
+            
+            if (uniqueBoxes.length === 0) {
+                listContainer.innerHTML = '<p class="text-gray-500 text-sm italic">No boxes created yet.</p>';
+                return;
+            }
+            
+            uniqueBoxes.forEach(box => {
+                const count = boxMap[box];
+                const div = document.createElement('div');
+                div.className = "flex justify-between items-center p-3 bg-gray-50 border rounded";
+                div.innerHTML = `
+                    <div>
+                        <p class="font-bold text-blue-800">${box}</p>
+                        <p class="text-xs text-gray-600">${count} items scanned</p>
+                    </div>
+                    <button onclick="resumeBox('${box}')" class="bg-blue-100 text-blue-700 px-4 py-2 rounded text-sm font-bold border border-blue-300 hover:bg-blue-200">
+                        Open
+                    </button>
+                `;
+                listContainer.appendChild(div);
+            });
         }
 
         // SPA Navigation
-        function goToScanner() {
-            const boxInput = document.getElementById('box-name').value.trim();
-            if (!boxInput) {
-                alert("Please enter a Box name first!");
-                return;
-            }
-            currentBox = boxInput;
+        function createNewBox() {
+            const today = new Date().toLocaleDateString(); 
+            const existingBoxes = [...new Set(localDB.map(item => item.box))];
+            
+            let maxSeq = 0;
+            existingBoxes.forEach(b => {
+                if (b.includes(today)) {
+                    const match = b.match(/Box (\d+)/);
+                    if (match && match[1]) {
+                        const num = parseInt(match[1]);
+                        if (num > maxSeq) maxSeq = num;
+                    }
+                }
+            });
+            
+            const nextSeq = maxSeq + 1;
+            const newBoxName = `Box ${nextSeq} - ${today}`;
+            
+            resumeBox(newBoxName);
+        }
+
+        function resumeBox(boxName) {
+            currentBox = boxName;
             localStorage.setItem('current_box', currentBox);
             
             document.getElementById('display-current-box').innerText = currentBox;
@@ -319,7 +371,6 @@
                 localDB = [];
                 localStorage.setItem('offline_qr_db', JSON.stringify(localDB));
                 updateDashboardStats();
-                document.getElementById('box-name').value = '';
                 localStorage.removeItem('current_box');
                 alert("Database cleared.");
             }
