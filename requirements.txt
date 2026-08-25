@@ -4,3 +4,7 @@ sqlalchemy
 pydantic
 jinja2
 qrcode
+python-multipart
+opencv-python-headless
+pyzbar
+rapidocr-onnxruntime
