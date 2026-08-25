@@ -54,6 +54,12 @@
         <div class="bg-white p-6 rounded-lg shadow-md">
             <h2 class="text-lg font-bold mb-4 text-gray-800">Database Options</h2>
             <p class="text-gray-600 text-sm mb-4">Total Factory Scans: <span id="total-scans-badge" class="font-bold text-blue-600">0</span></p>
+            
+            <button id="push-btn" onclick="pushToCloud()" class="w-full bg-blue-600 text-white py-3 rounded-lg font-bold hover:bg-blue-700 transition flex justify-center items-center shadow mb-3">
+                <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"></path></svg>
+                Push to Cloud Database
+            </button>
+            
             <button onclick="exportCSV()" class="w-full bg-gray-800 text-white py-3 rounded-lg font-bold hover:bg-gray-900 transition flex justify-center items-center shadow">
                 <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
                 Export All Data (CSV)
@@ -73,6 +79,7 @@
                             <th class="p-2 border">QR Data</th>
                             <th class="p-2 border">Qty</th>
                             <th class="p-2 border">Time</th>
+                            <th class="p-2 border">Status</th>
                         </tr>
                     </thead>
                     <tbody id="global-history-body">
@@ -204,15 +211,20 @@
             const tbody = document.getElementById('global-history-body');
             tbody.innerHTML = '';
             if (localDB.length === 0) {
-                tbody.innerHTML = `<tr><td colspan="4" class="p-4 text-center text-gray-500">No items scanned yet.</td></tr>`;
+                tbody.innerHTML = `<tr><td colspan="5" class="p-4 text-center text-gray-500">No items scanned yet.</td></tr>`;
             } else {
                 localDB.forEach(item => {
+                    const statusHtml = item.synced 
+                        ? `<span class="text-green-600 font-bold">☁️ Synced</span>` 
+                        : `<span class="text-yellow-600 font-bold">⏳ Pending</span>`;
+                    
                     const tr = document.createElement('tr');
                     tr.innerHTML = `
                         <td class="p-2 border font-bold text-gray-700">${item.box}</td>
                         <td class="p-2 border text-blue-600 font-mono text-xs">${item.qr}</td>
                         <td class="p-2 border font-bold text-green-600">${item.qty}</td>
                         <td class="p-2 border text-xs text-gray-500">${item.timestamp}</td>
+                        <td class="p-2 border text-xs text-center">${statusHtml}</td>
                     `;
                     tbody.appendChild(tr);
                 });
@@ -356,7 +368,8 @@
                 box: currentBox,
                 qr: qr,
                 qty: qty,
-                timestamp: new Date().toLocaleString()
+                timestamp: new Date().toLocaleString(),
+                synced: false
             };
 
             localDB.unshift(newItem); 
@@ -403,13 +416,55 @@
             }
         }
 
+        async function pushToCloud() {
+            if (!navigator.onLine) {
+                alert("You are currently offline. Please connect to the internet first.");
+                return;
+            }
+            const unsynced = localDB.filter(item => !item.synced);
+            if (unsynced.length === 0) {
+                alert("All items are already pushed to the cloud!");
+                return;
+            }
+            
+            try {
+                const btn = document.getElementById('push-btn');
+                const originalText = btn.innerHTML;
+                btn.innerHTML = `<svg class="animate-spin w-5 h-5 mr-2" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path></svg> Syncing...`;
+                
+                const response = await fetch('/api/sync', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(unsynced)
+                });
+                
+                if (response.ok) {
+                    localDB.forEach(item => { item.synced = true; });
+                    localStorage.setItem('offline_qr_db', JSON.stringify(localDB));
+                    alert(`Successfully pushed ${unsynced.length} items to the cloud!`);
+                    updateDashboardStats();
+                } else {
+                    alert("Server error. Could not push to cloud.");
+                }
+                btn.innerHTML = originalText;
+            } catch (e) {
+                alert("Network error. Make sure the server is reachable.");
+                document.getElementById('push-btn').innerHTML = `<svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"></path></svg> Push to Cloud Database`;
+            }
+        }
+
         function clearDatabase() {
-            if(confirm("WARNING: This will permanently delete ALL data from your phone. Have you exported the CSV first?")) {
+            const unsynced = localDB.filter(item => !item.synced);
+            if (unsynced.length > 0) {
+                alert(`STOP! You have ${unsynced.length} pending items that have not been pushed to the cloud database.\n\nPlease connect to the internet and click "Push to Cloud Database" before clearing your data!`);
+                return;
+            }
+            if(confirm("All data has been safely pushed to the cloud. Are you sure you want to clear the phone's memory to start fresh?")) {
                 localDB = [];
                 localStorage.setItem('offline_qr_db', JSON.stringify(localDB));
                 updateDashboardStats();
                 localStorage.removeItem('current_box');
-                alert("Database cleared.");
+                alert("Database cleared from phone.");
             }
         }
 

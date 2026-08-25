@@ -389,3 +389,40 @@ def download_master_qr_png(request: Request, collection_id: str, db: Session = D
         media_type="image/png", 
         headers={"Content-Disposition": f'attachment; filename="Master_QR_{safe_name}.png"'}
     )
+from pydantic import BaseModel
+from typing import List
+import uuid
+
+class SyncItem(BaseModel):
+    id: int
+    box: str
+    qr: str
+    qty: int
+    timestamp: str
+
+@app.post("/api/sync")
+def sync_offline_data(items: List[SyncItem], db: Session = Depends(get_db)):
+    for item in items:
+        # Check if collection exists by name
+        collection = db.query(models.Collection).filter(models.Collection.name == item.box).first()
+        if not collection:
+            collection = models.Collection(id=str(uuid.uuid4()), name=item.box, description="Synced from offline app")
+            db.add(collection)
+            db.commit()
+            db.refresh(collection)
+            
+        # Add item if it doesn't exist
+        existing_item = db.query(models.QRCodeData).filter(
+            models.QRCodeData.collection_id == collection.id,
+            models.QRCodeData.qr_data == item.qr
+        ).first()
+        
+        if not existing_item:
+            new_item = models.QRCodeData(
+                collection_id=collection.id,
+                qr_data=item.qr,
+                quantity=item.qty
+            )
+            db.add(new_item)
+    db.commit()
+    return {"status": "success", "synced_count": len(items)}
