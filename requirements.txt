@@ -8,3 +8,6 @@ python-multipart
 opencv-python-headless
 pyzbar
 rapidocr-onnxruntime
+
+pymysql
+cryptography
