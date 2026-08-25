@@ -190,6 +190,10 @@ def export_csv(db: Session = Depends(get_db)):
 # OLD JINJA2 ROUTES (Keep for local testing)
 # ==========================================
 
+@app.get("/offline", response_class=HTMLResponse)
+def offline_app(request: Request):
+    return templates.TemplateResponse(request=request, name="offline_app.html", context={"request": request})
+
 @app.get("/", response_class=HTMLResponse)
 def dashboard(request: Request, db: Session = Depends(get_db)):
     collections = db.query(models.Collection).order_by(models.Collection.created_at.desc()).all()

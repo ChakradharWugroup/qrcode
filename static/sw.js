@@ -1,4 +1,16 @@
+const CACHE_NAME = 'qr-offline-v1';
+const ASSETS = [
+  '/offline',
+  '/static/icon.png',
+  '/static/manifest.json',
+  'https://cdn.tailwindcss.com',
+  'https://unpkg.com/html5-qrcode'
+];
+
 self.addEventListener('install', (e) => {
+  e.waitUntil(
+    caches.open(CACHE_NAME).then((cache) => cache.addAll(ASSETS))
+  );
   self.skipWaiting();
 });
 
@@ -7,8 +19,9 @@ self.addEventListener('activate', (e) => {
 });
 
 self.addEventListener('fetch', (e) => {
-  // This is a minimal Service Worker.
-  // It just passes the requests to the network since we require an online database connection.
-  // Having this file is enough to trick the browser into showing the "Install App" prompt!
-  e.respondWith(fetch(e.request));
+  e.respondWith(
+    caches.match(e.request).then((cachedResponse) => {
+      return cachedResponse || fetch(e.request);
+    })
+  );
 });
