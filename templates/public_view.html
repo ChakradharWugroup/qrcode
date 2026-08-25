@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ collection.name }} - Collection</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-50 min-h-screen">
+    <header class="bg-blue-600 text-white p-4 shadow-md sticky top-0 z-10">
+        <div class="max-w-3xl mx-auto flex justify-between items-center">
+            <h1 class="text-xl font-bold truncate">{{ collection.name }}</h1>
+            <span class="bg-blue-800 text-xs px-2 py-1 rounded">{{ collection.qr_codes|length }} Items</span>
+        </div>
+    </header>
+
+    <main class="max-w-3xl mx-auto p-4 py-8">
+        <p class="text-gray-600 mb-6 text-center">You have scanned the Master QR. Here are the contents of this collection:</p>
+
+        <div class="space-y-6">
+            {% for qr in collection.qr_codes %}
+            <div class="bg-white p-5 rounded-xl shadow-sm border border-gray-200">
+                <div class="flex justify-between items-start border-b pb-3 mb-3">
+                    <h2 class="text-lg font-bold text-gray-800">
+                        <span class="text-blue-600 mr-1">{{ loop.index }}.</span> 
+                        Style: {{ qr.style_no }}
+                    </h2>
+                    <span class="bg-gray-100 text-gray-600 text-xs font-mono px-2 py-1 rounded">Size: {{ qr.size }}</span>
+                </div>
+                
+                <div class="grid grid-cols-2 gap-y-2 text-sm text-gray-600 mb-4">
+                    <div><span class="font-medium text-gray-800">Company:</span> {{ qr.company_name }}</div>
+                    <div><span class="font-medium text-gray-800">Color:</span> {{ qr.color }}</div>
+                    <div><span class="font-medium text-gray-800">Bed No:</span> {{ qr.bed_no }}</div>
+                    <div><span class="font-medium text-gray-800">Bundle No:</span> {{ qr.bundle_no }}</div>
+                    <div><span class="font-medium text-gray-800">Quantity:</span> {{ qr.quantity }}</div>
+                    
+                    {% if qr.total_bundles %}
+                    <div><span class="font-medium text-gray-800">Total Bundles:</span> {{ qr.total_bundles }}</div>
+                    {% endif %}
+                    
+                    {% if qr.total_quantity %}
+                    <div><span class="font-medium text-gray-800">Total Qty:</span> {{ qr.total_quantity }}</div>
+                    {% endif %}
+                </div>
+
+                <div class="bg-gray-50 p-3 rounded text-sm break-all font-mono">
+                    <span class="text-gray-500 block mb-1 uppercase text-xs font-bold">QR Data / URL:</span>
+                    <a href="{{ qr.qr_data }}" target="_blank" class="text-blue-600 hover:underline">{{ qr.qr_data }}</a>
+                </div>
+            </div>
+            {% else %}
+            <div class="text-center p-8 bg-white rounded-lg shadow-sm">
+                <p class="text-gray-500">This collection is currently empty.</p>
+            </div>
+            {% endfor %}
+        </div>
+    </main>
+</body>
+</html>
