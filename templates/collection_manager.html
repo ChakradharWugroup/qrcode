@@ -89,10 +89,10 @@
                     <img id="master-qr-img" src="data:image/png;base64,{{ master_qr }}" alt="Master QR" class="mx-auto w-48 h-48 mb-4">
                     <p class="text-sm text-gray-600 mb-2">Scan this to view the entire collection!</p>
                     <a href="{{ master_url }}" target="_blank" class="text-blue-600 text-sm hover:underline font-mono break-all">{{ master_url }}</a>
-                    <button onclick="downloadQRCode()" class="mt-4 bg-gray-800 text-white px-4 py-2 rounded hover:bg-gray-900 w-full font-bold shadow flex items-center justify-center">
+                    <a href="/collections/{{ collection.id }}/qr.png" download class="mt-4 bg-gray-800 text-white px-4 py-2 rounded hover:bg-gray-900 w-full font-bold shadow flex items-center justify-center">
                         <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path></svg>
                         Save QR as Image
-                    </button>
+                    </a>
                 </div>
 
                 <div class="bg-white p-4 rounded-lg shadow-md">
@@ -186,16 +186,7 @@
         }
     }
 
-    function downloadQRCode() {
-        const qrSrc = document.getElementById('master-qr-img').src;
-        const collectionName = "{{ collection.name }}".replace(/[^a-zA-Z0-9]/g, "_");
-        const link = document.createElement('a');
-        link.href = qrSrc;
-        link.download = `Master_QR_${collectionName}.png`;
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
-    }
+
     </script>
 </body>
 </html>

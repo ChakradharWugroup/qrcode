@@ -347,3 +347,25 @@ def view_master_qr(request: Request, collection_id: str, db: Session = Depends(g
     if not collection:
         return HTMLResponse(content="Collection not found", status_code=404)
     return templates.TemplateResponse(request=request, name="public_view.html", context={"request": request, "collection": collection})
+
+@app.get("/collections/{collection_id}/qr.png")
+def download_master_qr_png(request: Request, collection_id: str, db: Session = Depends(get_db)):
+    from fastapi.responses import StreamingResponse
+    collection = db.query(models.Collection).filter(models.Collection.id == collection_id).first()
+    if not collection:
+        return HTMLResponse(content="Not found", status_code=404)
+        
+    master_url = str(request.url_for("view_master_qr", collection_id=collection_id))
+    qr = qrcode.make(master_url)
+    buffered = BytesIO()
+    qr.save(buffered, format="PNG")
+    buffered.seek(0)
+    
+    # Sanitize name for file
+    safe_name = "".join(c for c in collection.name if c.isalnum() or c in (' ', '_')).replace(' ', '_')
+    
+    return StreamingResponse(
+        buffered, 
+        media_type="image/png", 
+        headers={"Content-Disposition": f'attachment; filename="Master_QR_{safe_name}.png"'}
+    )
