@@ -213,6 +213,28 @@ def add_qr_to_collection(
     total_quantity: int = Form(None),
     db: Session = Depends(get_db)
 ):
+    # Deduplication Check
+    existing = None
+    if qr_data != "No QR detected" and qr_data.strip() != "":
+        existing = db.query(models.GarmentQRCode).filter(
+            models.GarmentQRCode.collection_id == collection_id,
+            models.GarmentQRCode.qr_data == qr_data
+        ).first()
+    elif style_no != "Unknown" and bundle_no != "0":
+        existing = db.query(models.GarmentQRCode).filter(
+            models.GarmentQRCode.collection_id == collection_id,
+            models.GarmentQRCode.style_no == style_no,
+            models.GarmentQRCode.bed_no == bed_no,
+            models.GarmentQRCode.bundle_no == bundle_no,
+            models.GarmentQRCode.size == size
+        ).first()
+
+    if existing:
+        # Optionally, could render an HTML error or just redirect back.
+        # Since the frontend does a standard form POST, redirect back with an error param is ideal,
+        # but returning HTML is simpler.
+        return HTMLResponse(content=f"<script>alert('Duplicate tag! This item has already been added.'); window.history.back();</script>")
+
     db_qr = models.GarmentQRCode(
         collection_id=collection_id,
         qr_data=qr_data,
@@ -231,7 +253,7 @@ def add_qr_to_collection(
     return RedirectResponse(url=f"/collections/{collection_id}", status_code=303)
 
 @app.post("/collections/{collection_id}/upload_qr")
-async def upload_qr_image(collection_id: str, file: UploadFile = File(...)):
+async def upload_qr_image(collection_id: str, file: UploadFile = File(...), db: Session = Depends(get_db)):
     from fastapi.responses import JSONResponse
     contents = await file.read()
     nparr = np.frombuffer(contents, np.uint8)
@@ -313,6 +335,25 @@ async def upload_qr_image(collection_id: str, file: UploadFile = File(...)):
                 if "均码" in clean_upper:
                     size = "均码"
                     break
+
+        # Deduplication Check
+        existing = None
+        if qr_data != "No QR detected" and qr_data.strip() != "":
+            existing = db.query(models.GarmentQRCode).filter(
+                models.GarmentQRCode.collection_id == collection_id,
+                models.GarmentQRCode.qr_data == qr_data
+            ).first()
+        elif style_no != "Unknown" and bundle_no != "0":
+            existing = db.query(models.GarmentQRCode).filter(
+                models.GarmentQRCode.collection_id == collection_id,
+                models.GarmentQRCode.style_no == style_no,
+                models.GarmentQRCode.bed_no == bed_no,
+                models.GarmentQRCode.bundle_no == bundle_no,
+                models.GarmentQRCode.size == size
+            ).first()
+
+        if existing:
+            return JSONResponse({"error": f"Duplicate tag! This item (Style: {style_no}, Bundle: {bundle_no}, Size: {size}) has already been added to the collection."}, status_code=400)
 
         return JSONResponse({
             "qr_data": qr_data,
