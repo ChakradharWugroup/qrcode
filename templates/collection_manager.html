@@ -51,53 +51,18 @@
                     <h3 class="text-lg font-semibold mb-4 border-b pb-2">2. Review & Add Item</h3>
                     <form action="/collections/{{ collection.id }}/add_qr" method="POST" id="manual-form" class="space-y-4">
                         <div>
-                            <label class="block text-sm font-medium text-gray-700">QR Code URL/Data</label>
-                            <input type="text" id="input-qr" name="qr_data" required class="mt-1 w-full border border-gray-300 rounded px-3 py-2" placeholder="https://example.com/item/1">
+                            <label class="block text-sm font-medium text-gray-700">QR Code URL/Data (TID)</label>
+                            <input type="text" id="input-qr" name="qr_data" required class="mt-1 w-full border border-gray-300 rounded px-3 py-2" placeholder="Scan image above to extract QR...">
                         </div>
                         
-                        <div class="grid grid-cols-2 gap-4">
-                            <div>
-                                <label class="block text-sm font-medium text-gray-700">Company Name</label>
-                                <input type="text" id="input-company" name="company_name" value="江西大藤制衣有限公司" class="mt-1 w-full border border-gray-300 rounded px-3 py-2">
-                            </div>
-                            <div>
-                                <label class="block text-sm font-medium text-gray-700">Style No (款号)</label>
-                                <input type="text" id="input-style" name="style_no" required class="mt-1 w-full border border-gray-300 rounded px-3 py-2" placeholder="e.g., 2026031212">
-                            </div>
-                            <div>
-                                <label class="block text-sm font-medium text-gray-700">Bed No (床次)</label>
-                                <input type="text" id="input-bed" name="bed_no" required class="mt-1 w-full border border-gray-300 rounded px-3 py-2" placeholder="e.g., 596">
-                            </div>
-                            <div>
-                                <label class="block text-sm font-medium text-gray-700">Bundle No (扎号)</label>
-                                <input type="text" id="input-bundle" name="bundle_no" required class="mt-1 w-full border border-gray-300 rounded px-3 py-2" placeholder="e.g., 3">
-                            </div>
-                            <div>
-                                <label class="block text-sm font-bold text-blue-700">Quantity (数量)</label>
-                                <input type="number" id="input-quantity" name="quantity" required class="mt-1 w-full border-2 border-blue-400 rounded px-3 py-2 bg-blue-50" placeholder="Verify Quantity before adding">
-                            </div>
-                            <div>
-                                <label class="block text-sm font-medium text-gray-700">Color (颜色)</label>
-                                <input type="text" id="input-color" name="color" required class="mt-1 w-full border border-gray-300 rounded px-3 py-2" placeholder="e.g., 白色">
-                            </div>
-                            <div>
-                                <label class="block text-sm font-medium text-gray-700">Size</label>
-                                <input type="text" id="input-size" name="size" required class="mt-1 w-full border border-gray-300 rounded px-3 py-2" placeholder="e.g., XL">
-                            </div>
+                        <div>
+                            <label class="block text-sm font-bold text-blue-700">Quantity (Enter Manually)</label>
+                            <input type="number" id="input-quantity" name="quantity" required class="mt-1 w-full border-2 border-blue-400 rounded px-3 py-2 bg-blue-50 text-xl font-bold" placeholder="Type quantity here...">
                         </div>
 
-                        <div class="grid grid-cols-2 gap-4 pt-2 border-t mt-4">
-                            <div>
-                                <label class="block text-sm font-medium text-gray-700">Total Bundles (总扎)</label>
-                                <input type="number" id="input-total-bundles" name="total_bundles" class="mt-1 w-full border border-gray-300 rounded px-3 py-2" placeholder="e.g., 104">
-                            </div>
-                            <div>
-                                <label class="block text-sm font-medium text-gray-700">Total Quantity (总数)</label>
-                                <input type="number" id="input-total-quantity" name="total_quantity" class="mt-1 w-full border border-gray-300 rounded px-3 py-2" placeholder="e.g., 18720">
-                            </div>
-                        </div>
-
-                        <button type="submit" class="w-full bg-green-600 text-white px-4 py-3 rounded-lg hover:bg-green-700 font-bold text-lg mt-4 shadow-md transition">Add to Collection</button>
+                        <button type="submit" class="w-full bg-green-600 text-white px-4 py-3 rounded hover:bg-green-700 font-bold text-lg shadow mt-6">
+                            Add to Collection
+                        </button>
                     </form>
                 </div>
             </div>
@@ -186,17 +151,9 @@
 
             const data = await res.json();
             
-            // Populate the Review form fields
+            // Populate form
             document.getElementById('input-qr').value = data.qr_data || "";
-            document.getElementById('input-company').value = data.company_name || "";
-            document.getElementById('input-style').value = data.style_no || "";
-            document.getElementById('input-bed').value = data.bed_no || "";
-            document.getElementById('input-bundle').value = data.bundle_no || "";
             document.getElementById('input-quantity').value = data.quantity || "";
-            document.getElementById('input-color').value = data.color || "";
-            document.getElementById('input-size').value = data.size || "";
-            document.getElementById('input-total-bundles').value = data.total_bundles || "";
-            document.getElementById('input-total-quantity').value = data.total_quantity || "";
 
             // Flash success message
             alert("✅ Success! Data extracted.\n\nPlease review the Quantity and other fields below, then click 'Add to Collection'.");
