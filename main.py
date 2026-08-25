@@ -10,7 +10,8 @@ import base64
 import cv2
 import numpy as np
 from pyzbar.pyzbar import decode
-from rapidocr_onnxruntime import RapidOCR
+# AI OCR Disabled per user request
+# from rapidocr_onnxruntime import RapidOCR
 import os
 
 import models, schemas
@@ -30,7 +31,7 @@ app.add_middleware(
 )
 
 templates = Jinja2Templates(directory="templates")
-ocr = RapidOCR()
+# ocr = RapidOCR() # AI OCR Disabled
 
 # ==========================================
 # REST API ENDPOINTS (FOR VERCEL FRONTEND)
@@ -110,6 +111,7 @@ def api_add_qr(collection_id: str, item: schemas.GarmentQRCodeCreate, db: Sessio
 
 @app.post("/api/collections/{collection_id}/upload_qr")
 async def api_upload_qr(collection_id: str, file: UploadFile = File(...)):
+    from fastapi.responses import JSONResponse
     contents = await file.read()
     nparr = np.frombuffer(contents, np.uint8)
     img = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
@@ -117,36 +119,14 @@ async def api_upload_qr(collection_id: str, file: UploadFile = File(...)):
     if img is None:
         return JSONResponse({"error": "Invalid image"}, status_code=400)
 
+    # 1. Extract QR Code ONLY
     qr_data = "No QR detected"
     decoded_objects = decode(img)
     if decoded_objects:
         qr_data = decoded_objects[0].data.decode("utf-8")
         
-    result, elapse = ocr(img)
-    texts = [item[1] for item in result] if result else []
-        
-    style_no, bed_no, bundle_no, quantity, color, size, total_bundles, total_quantity = "Unknown", "0", "0", 0, "Unknown", "Unknown", 0, 0
-    
-    for text in texts:
-        if "款号:" in text or "款号" in text:
-            style_no = text.replace("款号:", "").replace("款号", "").strip()
-        elif "床次:" in text or "床次" in text:
-            bed_no = text.replace("床次:", "").replace("床次", "").strip()
-        elif "扎号:" in text or "扎号" in text:
-            bundle_no = text.replace("扎号:", "").replace("扎号", "").strip()
-        elif "数量" in text and "总数" not in text:
-            try: quantity = int(''.join(filter(str.isdigit, text)))
-            except: pass
-        elif "颜色:" in text or "颜色" in text:
-            color = text.replace("颜色:", "").replace("颜色", "").strip()
-        elif "总扎" in text:
-            try: total_bundles = int(''.join(filter(str.isdigit, text)))
-            except: pass
-        elif "总数" in text:
-            try: total_quantity = int(''.join(filter(str.isdigit, text)))
-            except: pass
-        elif text.strip().upper() in ["S", "M", "L", "XL", "XXL", "XXXL"]:
-            size = text.strip().upper()
+    # AI OCR Disabled per user request
+    style_no, bed_no, bundle_no, quantity, color, size, total_bundles, total_quantity = "", "", "", "", "", "", "", ""
 
     return {
         "qr_data": qr_data,
@@ -220,7 +200,7 @@ def add_qr_to_collection(
             models.GarmentQRCode.collection_id == collection_id,
             models.GarmentQRCode.qr_data == qr_data
         ).first()
-    elif style_no != "Unknown" and bundle_no != "0":
+    elif style_no and bundle_no and style_no != "Unknown" and bundle_no != "0":
         existing = db.query(models.GarmentQRCode).filter(
             models.GarmentQRCode.collection_id == collection_id,
             models.GarmentQRCode.style_no == style_no,
@@ -269,72 +249,15 @@ async def upload_qr_image(collection_id: str, file: UploadFile = File(...), db: 
         if decoded_objects:
             qr_data = decoded_objects[0].data.decode("utf-8")
             
-        # 2. Extract Text using OCR
-        result, elapse = ocr(img)
-        texts = []
-        if result:
-            texts = [item[1] for item in result]
-            
-        # 3. Simple parsing logic based on label format
-        style_no = "Unknown"
-        bed_no = "0"
-        bundle_no = "0"
-        quantity = 0
-        color = "Unknown"
-        size = "Unknown"
-        total_bundles = 0
-        total_quantity = 0
-        
-        for i, text in enumerate(texts):
-            clean = text.strip()
-            if "款号" in clean:
-                style_no = clean.replace("款号", "").replace(":", "").replace("：", "").strip()
-                if not style_no and i + 1 < len(texts): style_no = texts[i+1].strip()
-            elif "床次" in clean:
-                bed_no = clean.replace("床次", "").replace(":", "").replace("：", "").strip()
-                if not bed_no and i + 1 < len(texts): bed_no = texts[i+1].strip()
-            elif "扎号" in clean:
-                bundle_no = clean.replace("扎号", "").replace(":", "").replace("：", "").strip()
-                if not bundle_no and i + 1 < len(texts): bundle_no = texts[i+1].strip()
-            elif "数量" in clean and "总数" not in clean:
-                try: quantity = int(''.join(filter(str.isdigit, clean)))
-                except: pass
-            elif "颜色" in clean:
-                color = clean.replace("颜色", "").replace(":", "").replace("：", "").strip()
-                if not color and i + 1 < len(texts): color = texts[i+1].strip()
-            elif "总扎" in clean:
-                try: total_bundles = int(''.join(filter(str.isdigit, clean)))
-                except: pass
-            elif "总数" in clean:
-                try: total_quantity = int(''.join(filter(str.isdigit, clean)))
-                except: pass
-            elif "尺码" in clean or "规格" in clean or "型号" in clean or "SIZE" in clean.upper():
-                val = clean.replace("尺码", "").replace("规格", "").replace("型号", "").replace("SIZE", "").replace("size", "").replace(":", "").replace("：", "").strip()
-                if val: 
-                    size = val
-                elif i + 1 < len(texts):
-                    # Dynamically grab the VERY NEXT box of text if this box is just the label!
-                    size = texts[i+1].replace(":", "").replace("：", "").strip()
-            elif clean.upper() in ["S", "M", "L", "XL", "XXL", "XXXL", "4XL", "5XL", "均码"]:
-                size = clean.upper()
-
-        if size == "Unknown":
-            import re
-            for text in texts:
-                clean_upper = text.strip().upper()
-                # Dynamically match isolated standard sizes even with heavy noise
-                extracted = re.sub(r'[^A-Z0-9]', '', clean_upper)
-                if extracted in ["S", "M", "L", "XL", "XXL", "XXXL", "3XL", "4XL", "5XL"] and len(clean_upper) <= 6:
-                    size = extracted
-                    break
-                # Dynamically match standard height/chest sizes like 170/92A
-                match = re.search(r'\d{3}/\d{2,3}[A-Z]?', clean_upper)
-                if match:
-                    size = match.group()
-                    break
-                if "均码" in clean_upper:
-                    size = "均码"
-                    break
+        # AI OCR Disabled per user request - only extract QR Code
+        style_no = ""
+        bed_no = ""
+        bundle_no = ""
+        quantity = ""
+        color = ""
+        size = ""
+        total_bundles = ""
+        total_quantity = ""
 
         # Deduplication Check
         existing = None
@@ -343,7 +266,7 @@ async def upload_qr_image(collection_id: str, file: UploadFile = File(...), db: 
                 models.GarmentQRCode.collection_id == collection_id,
                 models.GarmentQRCode.qr_data == qr_data
             ).first()
-        elif style_no != "Unknown" and bundle_no != "0":
+        elif style_no and bundle_no and style_no != "Unknown" and bundle_no != "0":
             existing = db.query(models.GarmentQRCode).filter(
                 models.GarmentQRCode.collection_id == collection_id,
                 models.GarmentQRCode.style_no == style_no,
