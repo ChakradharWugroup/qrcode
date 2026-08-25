@@ -15,8 +15,21 @@
         navigator.serviceWorker.register('/static/sw.js');
       }
     </script>
+    <style>
+        @media print {
+            body * { visibility: hidden; }
+            #print-area, #print-area * { visibility: visible; }
+            #print-area { position: absolute; left: 0; top: 0; width: 100%; text-align: center; margin-top: 20px; }
+        }
+    </style>
 </head>
-<<body class="bg-gray-100 min-h-screen pb-10">
+<body class="bg-gray-100 min-h-screen pb-10">
+    <!-- Print Area (Hidden normally) -->
+    <div id="print-area" class="hidden">
+        <h1 id="print-title" style="font-size: 36px; font-weight: bold; margin-bottom: 20px; font-family: sans-serif;"></h1>
+        <canvas id="master-qr-canvas" style="margin: 0 auto;"></canvas>
+    </div>
+
     <!-- Header -->
     <header class="bg-blue-600 text-white p-4 shadow-md sticky top-0 z-10 flex justify-between items-center">
         <h1 class="text-xl font-bold">100% Offline QR App</h1>
@@ -56,19 +69,9 @@
             </button>
         </div>
 
-        <div class="bg-blue-50 border border-blue-200 p-4 rounded-lg shadow-sm flex flex-col md:flex-row justify-between items-center text-center md:text-left gap-4">
-            <div>
-                <p class="text-gray-700 text-sm">Currently Scanning Into:</p>
-                <p class="text-3xl font-bold text-blue-800" id="display-current-box">Box 1</p>
-            </div>
-            <div class="bg-white p-3 rounded shadow flex flex-col items-center">
-                <p class="text-xs font-bold text-gray-500 mb-2 uppercase tracking-wide">Master Box Label</p>
-                <canvas id="master-qr-canvas" class="w-32 h-32 mx-auto"></canvas>
-                <button onclick="downloadMasterQR()" class="mt-3 bg-gray-800 text-white text-xs px-4 py-2 rounded hover:bg-gray-900 font-bold flex items-center justify-center w-full">
-                    <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path></svg>
-                    Save Image
-                </button>
-            </div>
+        <div class="bg-blue-50 border border-blue-200 p-4 rounded-lg shadow-sm">
+            <p class="text-gray-700 text-sm">Currently Scanning Into:</p>
+            <p class="text-2xl font-bold text-blue-800" id="display-current-box">Box 1</p>
         </div>
 
         <!-- Scanner Section -->
@@ -103,6 +106,10 @@
         <div class="bg-white p-4 rounded-lg shadow">
             <div class="flex justify-between items-center mb-2 border-b pb-1">
                 <h2 class="text-lg font-bold">Items in <span id="table-box-name">Box 1</span></h2>
+                <button onclick="printBoxQR()" class="bg-blue-600 text-white px-3 py-1 rounded text-sm font-bold flex items-center shadow hover:bg-blue-700">
+                    <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"></path></svg>
+                    Print QR Code
+                </button>
             </div>
             
             <div class="overflow-x-auto mt-4">
@@ -158,20 +165,14 @@
             renderTable();
         }
 
-        function downloadMasterQR() {
-            const canvas = document.getElementById('master-qr-canvas');
-            const dataURL = canvas.toDataURL("image/png");
+        function printBoxQR() {
+            const boxItems = localDB.filter(item => item.box === currentBox);
             
-            const link = document.createElement("a");
-            const safeBoxName = currentBox.replace(/[^a-zA-Z0-9]/g, "_");
-            link.download = `Offline_Master_QR_${safeBoxName}.png`;
-            link.href = dataURL;
-            document.body.appendChild(link);
-            link.click();
-            document.body.removeChild(link);
-        }
+            if (boxItems.length === 0) {
+                alert("Box is empty! Please scan items first.");
+                return;
+            }
 
-        function updateMasterQR(boxItems) {
             let totalQty = 0;
             let itemList = "";
 
@@ -182,18 +183,29 @@
 
             let qrText = `Box: ${currentBox}\nUnique TIDs: ${boxItems.length}\nTotal Qty: ${totalQty}\n---\n${itemList}`;
             
-            // Safety limit to prevent QR code from crashing if someone scans 500 items
             if (qrText.length > 2000) {
                 qrText = qrText.substring(0, 2000) + "\n...[TRUNCATED]";
             }
 
-            // Draw QR
-            new QRious({
+            // Draw QR on hidden print canvas
+            const qr = new QRious({
                 element: document.getElementById('master-qr-canvas'),
                 value: qrText,
-                size: 250,
-                level: 'L' // Low error correction maximizes data capacity
+                size: 300,
+                level: 'L'
             });
+
+            // Set Title
+            document.getElementById('print-title').innerText = currentBox;
+
+            // Trigger Print Dialog
+            document.getElementById('print-area').classList.remove('hidden');
+            window.print();
+            
+            // Hide Print Area after print dialog closes (timeout to allow render)
+            setTimeout(() => {
+                document.getElementById('print-area').classList.add('hidden');
+            }, 1000);
         }
 
         function goToDashboard() {
@@ -274,9 +286,6 @@
             // Only show items for CURRENT BOX
             const boxItems = localDB.filter(item => item.box === currentBox);
             
-            // Re-draw the master QR code with the latest data
-            updateMasterQR(boxItems);
-
             if (boxItems.length === 0) {
                 tbody.innerHTML = `<tr><td colspan="4" class="p-4 text-center text-gray-500">No items in ${currentBox} yet.</td></tr>`;
                 return;
