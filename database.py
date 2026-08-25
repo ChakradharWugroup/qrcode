@@ -2,8 +2,12 @@ import os
 from sqlalchemy import create_engine
 from sqlalchemy.orm import declarative_base, sessionmaker
 
-# Use cloud database if provided, otherwise default to TiDB Serverless cluster
-DATABASE_URL = os.getenv("DATABASE_URL", "mysql+pymysql://NxhLTEzTjPVqirD.root:HWxDC9wu8g6Dv612@gateway01.ap-northeast-1.prod.aws.tidbcloud.com:4000/test?ssl_verify_cert=true&ssl_verify_identity=true")
+# Load URL from environment, or use TiDB cluster as fallback
+_env_url = os.getenv("DATABASE_URL", "").strip()
+if _env_url:
+    DATABASE_URL = _env_url
+else:
+    DATABASE_URL = "mysql+pymysql://NxhLTEzTjPVqirD.root:HWxDC9wu8g6Dv612@gateway01.ap-northeast-1.prod.aws.tidbcloud.com:4000/test?ssl_verify_cert=true&ssl_verify_identity=true"
 
 # SQLAlchemy requires 'postgresql://' instead of 'postgres://'
 if DATABASE_URL.startswith("postgres://"):
