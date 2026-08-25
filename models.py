@@ -1,9 +1,12 @@
 from sqlalchemy import Column, Integer, String, ForeignKey, DateTime
 from sqlalchemy.orm import relationship
-from sqlalchemy.sql import func
 from database import Base
 import string
 import random
+from datetime import datetime, timedelta
+
+def get_china_time():
+    return datetime.utcnow() + timedelta(hours=8)
 
 def generate_collection_id():
     # Generates a random 6-character ID like 'ABC123'
@@ -15,7 +18,7 @@ class Collection(Base):
 
     id = Column(String, primary_key=True, default=generate_collection_id, index=True)
     name = Column(String, index=True)
-    created_at = Column(DateTime(timezone=True), server_default=func.now())
+    created_at = Column(DateTime(timezone=True), default=get_china_time)
 
     qr_codes = relationship("GarmentQRCode", back_populates="collection")
 
@@ -38,6 +41,6 @@ class GarmentQRCode(Base):
     total_bundles = Column(Integer, nullable=True)
     total_quantity = Column(Integer, nullable=True)
 
-    created_at = Column(DateTime(timezone=True), server_default=func.now())
+    created_at = Column(DateTime(timezone=True), default=get_china_time)
 
     collection = relationship("Collection", back_populates="qr_codes")
