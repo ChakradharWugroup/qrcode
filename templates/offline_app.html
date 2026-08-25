@@ -62,6 +62,25 @@
                 Clear All Data
             </button>
         </div>
+
+        <div class="bg-white p-6 rounded-lg shadow-md">
+            <h2 class="text-lg font-bold mb-2 text-gray-800 border-b pb-2">Global Scan History</h2>
+            <div class="overflow-x-auto max-h-96 overflow-y-auto mt-4">
+                <table class="w-full text-left text-sm whitespace-nowrap">
+                    <thead>
+                        <tr class="bg-gray-200">
+                            <th class="p-2 border">Box</th>
+                            <th class="p-2 border">QR Data</th>
+                            <th class="p-2 border">Qty</th>
+                            <th class="p-2 border">Time</th>
+                        </tr>
+                    </thead>
+                    <tbody id="global-history-body">
+                        <!-- Javascript will render all items here -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
     </div>
 
     <!-- SCREEN 2: SCANNER -->
@@ -180,6 +199,24 @@
                 `;
                 listContainer.appendChild(div);
             });
+
+            // Render Global History Table
+            const tbody = document.getElementById('global-history-body');
+            tbody.innerHTML = '';
+            if (localDB.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="4" class="p-4 text-center text-gray-500">No items scanned yet.</td></tr>`;
+            } else {
+                localDB.forEach(item => {
+                    const tr = document.createElement('tr');
+                    tr.innerHTML = `
+                        <td class="p-2 border font-bold text-gray-700">${item.box}</td>
+                        <td class="p-2 border text-blue-600 font-mono text-xs">${item.qr}</td>
+                        <td class="p-2 border font-bold text-green-600">${item.qty}</td>
+                        <td class="p-2 border text-xs text-gray-500">${item.timestamp}</td>
+                    `;
+                    tbody.appendChild(tr);
+                });
+            }
         }
 
         // SPA Navigation
