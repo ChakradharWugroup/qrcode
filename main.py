@@ -288,9 +288,25 @@ async def upload_qr_image(collection_id: str, file: UploadFile = File(...), db: 
         if img is None:
             return JSONResponse({"error": "Invalid image format (e.g. unsupported HEIC) or corrupted file."}, status_code=400)
 
+        # Pre-process for better QR detection on high-res mobile photos
+        gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+        
+        # Resize if the image is massive (e.g. >1500px) because pyzbar struggles with 4K photos
+        h, w = gray.shape
+        max_dim = 1200
+        if max(h, w) > max_dim:
+            scale = max_dim / max(h, w)
+            gray = cv2.resize(gray, (int(w * scale), int(h * scale)))
+
         # 1. Extract QR Code
         qr_data = "No QR detected"
-        decoded_objects = decode(img)
+        decoded_objects = decode(gray)
+        
+        # If standard decode fails, try thresholding (high contrast)
+        if not decoded_objects:
+            _, thresh = cv2.threshold(gray, 128, 255, cv2.THRESH_BINARY | cv2.THRESH_OTSU)
+            decoded_objects = decode(thresh)
+
         if decoded_objects:
             qr_data = decoded_objects[0].data.decode("utf-8")
             
