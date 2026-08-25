@@ -406,7 +406,7 @@ def sync_offline_data(items: List[SyncItem], db: Session = Depends(get_db)):
         # Check if collection exists by name
         collection = db.query(models.Collection).filter(models.Collection.name == item.box).first()
         if not collection:
-            collection = models.Collection(id=str(uuid.uuid4()), name=item.box, description="Synced from offline app")
+            collection = models.Collection(id=str(uuid.uuid4()), name=item.box)
             db.add(collection)
             db.commit()
             db.refresh(collection)
