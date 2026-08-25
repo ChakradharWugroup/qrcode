@@ -89,9 +89,9 @@
                     <img id="master-qr-img" src="data:image/png;base64,{{ master_qr }}" alt="Master QR" class="mx-auto w-48 h-48 mb-4">
                     <p class="text-sm text-gray-600 mb-2">Scan this to view the entire collection!</p>
                     <a href="{{ master_url }}" target="_blank" class="text-blue-600 text-sm hover:underline font-mono break-all">{{ master_url }}</a>
-                    <button onclick="printQRCode()" class="mt-4 bg-gray-800 text-white px-4 py-2 rounded hover:bg-gray-900 w-full font-bold shadow flex items-center justify-center">
-                        <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"></path></svg>
-                        Print QR Code
+                    <button onclick="downloadQRCode()" class="mt-4 bg-gray-800 text-white px-4 py-2 rounded hover:bg-gray-900 w-full font-bold shadow flex items-center justify-center">
+                        <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path></svg>
+                        Save QR as Image
                     </button>
                 </div>
 
@@ -186,35 +186,15 @@
         }
     }
 
-    function printQRCode() {
+    function downloadQRCode() {
         const qrSrc = document.getElementById('master-qr-img').src;
-        const collectionName = "{{ collection.name }}";
-        const printWindow = window.open('', '', 'width=600,height=600');
-        printWindow.document.write(`
-            <html>
-                <head>
-                    <title>Print Master QR - ${collectionName}</title>
-                    <style>
-                        body { font-family: sans-serif; text-align: center; padding: 40px; }
-                        img { width: 300px; height: 300px; margin: 20px auto; display: block; }
-                        h1 { font-size: 28px; margin-bottom: 5px; color: #111; }
-                        p { color: #555; font-size: 18px; }
-                    </style>
-                </head>
-                <body>
-                    <h1>${collectionName}</h1>
-                    <p>Scan to view all collection items</p>
-                    <img src="${qrSrc}" />
-                    <script>
-                        setTimeout(() => {
-                            window.print();
-                            window.close();
-                        }, 250);
-                    <\/script>
-                </body>
-            </html>
-        `);
-        printWindow.document.close();
+        const collectionName = "{{ collection.name }}".replace(/[^a-zA-Z0-9]/g, "_");
+        const link = document.createElement('a');
+        link.href = qrSrc;
+        link.download = `Master_QR_${collectionName}.png`;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
     }
     </script>
 </body>
