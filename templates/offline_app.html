@@ -32,8 +32,15 @@
 
     <!-- Header -->
     <header class="bg-blue-600 text-white p-4 shadow-md sticky top-0 z-10 flex justify-between items-center">
-        <h1 class="text-xl font-bold">100% Offline QR App</h1>
-        <span id="status-indicator" class="bg-green-500 text-xs px-2 py-1 rounded font-bold">Ready</span>
+        <h1 class="text-xl font-bold" data-i18n="title">100% Offline QR App</h1>
+        <div class="flex items-center space-x-2">
+            <select id="lang-select" onchange="setLanguage(this.value)" class="text-xs bg-blue-700 text-white border-none rounded p-1 outline-none">
+                <option value="en">English</option>
+                <option value="zh-CN">简体中文</option>
+                <option value="zh-TW">繁體中文</option>
+            </select>
+            <span id="status-indicator" class="bg-green-500 text-xs px-2 py-1 rounded font-bold" data-i18n="ready">Ready</span>
+        </div>
     </header>
 
     <!-- SCREEN 1: DASHBOARD -->
@@ -41,45 +48,45 @@
         
         <button onclick="createNewBox()" class="w-full bg-blue-600 text-white py-4 rounded-lg font-bold text-xl hover:bg-blue-700 transition shadow-lg flex justify-center items-center">
             <svg class="w-6 h-6 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
-            Start New Box
+            <span data-i18n="start_new_box">Start New Box</span>
         </button>
         
         <div class="bg-white p-6 rounded-lg shadow-md">
-            <h2 class="text-lg font-bold mb-2 text-gray-800 border-b pb-2">Your Boxes</h2>
+            <h2 class="text-lg font-bold mb-2 text-gray-800 border-b pb-2" data-i18n="your_boxes">Your Boxes</h2>
             <div id="dashboard-box-list" class="space-y-2 mt-3 max-h-64 overflow-y-auto pr-2">
                 <!-- Javascript will render the list of boxes here -->
             </div>
         </div>
         
         <div class="bg-white p-6 rounded-lg shadow-md">
-            <h2 class="text-lg font-bold mb-4 text-gray-800">Database Options</h2>
-            <p class="text-gray-600 text-sm mb-4">Total Factory Scans: <span id="total-scans-badge" class="font-bold text-blue-600">0</span></p>
+            <h2 class="text-lg font-bold mb-4 text-gray-800" data-i18n="database_options">Database Options</h2>
+            <p class="text-gray-600 text-sm mb-4" data-i18n="total_scans">Total Factory Scans: <span id="total-scans-badge" class="font-bold text-blue-600">0</span></p>
             
             <button id="push-btn" onclick="pushToCloud()" class="w-full bg-blue-600 text-white py-3 rounded-lg font-bold hover:bg-blue-700 transition flex justify-center items-center shadow mb-3">
                 <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"></path></svg>
-                Push to Cloud Database
+                <span data-i18n="push_cloud">Push to Cloud Database</span>
             </button>
             
             <button onclick="exportCSV()" class="w-full bg-gray-800 text-white py-3 rounded-lg font-bold hover:bg-gray-900 transition flex justify-center items-center shadow">
                 <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
-                Export All Data (CSV)
+                <span data-i18n="export_csv">Export All Data (CSV)</span>
             </button>
             <button onclick="clearDatabase()" class="mt-4 w-full bg-red-100 text-red-700 py-2 rounded font-bold border border-red-300">
-                Clear All Data
+                <span data-i18n="clear_data">Clear All Data</span>
             </button>
         </div>
 
         <div class="bg-white p-6 rounded-lg shadow-md">
-            <h2 class="text-lg font-bold mb-2 text-gray-800 border-b pb-2">Global Scan History</h2>
+            <h2 class="text-lg font-bold mb-2 text-gray-800 border-b pb-2" data-i18n="global_history">Global Scan History</h2>
             <div class="overflow-x-auto max-h-96 overflow-y-auto mt-4">
                 <table class="w-full text-left text-sm whitespace-nowrap">
                     <thead>
                         <tr class="bg-gray-200">
-                            <th class="p-2 border">Box</th>
-                            <th class="p-2 border">QR Data</th>
-                            <th class="p-2 border">Qty</th>
-                            <th class="p-2 border">Time</th>
-                            <th class="p-2 border">Status</th>
+                            <th class="p-2 border" data-i18n="col_box">Box</th>
+                            <th class="p-2 border" data-i18n="col_qr">QR Data</th>
+                            <th class="p-2 border" data-i18n="col_qty">Qty</th>
+                            <th class="p-2 border" data-i18n="col_time">Time</th>
+                            <th class="p-2 border" data-i18n="col_status">Status</th>
                         </tr>
                     </thead>
                     <tbody id="global-history-body">
@@ -95,18 +102,18 @@
         
         <div class="flex justify-between items-center mb-2">
             <button onclick="goToDashboard()" class="text-blue-600 font-bold hover:underline inline-flex items-center">
-                &larr; Back to Boxes
+                &larr; <span data-i18n="back_to_boxes">Back to Boxes</span>
             </button>
         </div>
 
         <div class="bg-blue-50 border border-blue-200 p-4 rounded-lg shadow-sm">
-            <p class="text-gray-700 text-sm">Currently Scanning Into:</p>
+            <p class="text-gray-700 text-sm" data-i18n="scanning_into">Currently Scanning Into:</p>
             <p class="text-2xl font-bold text-blue-800" id="display-current-box">Box 1</p>
         </div>
 
         <!-- Scanner Section -->
         <div class="bg-white p-4 rounded-lg shadow">
-            <h2 class="text-lg font-bold mb-2 border-b pb-1">1. Live Scanner</h2>
+            <h2 class="text-lg font-bold mb-2 border-b pb-1" data-i18n="live_scanner">1. Live Scanner</h2>
             <div id="reader" class="w-full bg-black rounded overflow-hidden"></div>
             <button id="start-scan-btn" onclick="startScanner()" class="mt-4 w-full bg-blue-600 text-white py-3 rounded font-bold flex justify-center items-center">
                 <svg class="w-6 h-6 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"></path></svg>
@@ -116,18 +123,18 @@
 
         <!-- Manual Entry Section -->
         <div class="bg-white p-4 rounded-lg shadow">
-            <h2 class="text-lg font-bold mb-2 border-b pb-1">2. Review & Add</h2>
+            <h2 class="text-lg font-bold mb-2 border-b pb-1" data-i18n="review_add">2. Review & Add</h2>
             <div class="space-y-4">
                 <div>
-                    <label class="block text-sm font-medium text-gray-700">Scanned QR Data (TID)</label>
-                    <input type="text" id="input-qr" class="mt-1 w-full border border-gray-300 rounded px-3 py-2 bg-gray-50" placeholder="Scan above or type here...">
+                    <label class="block text-sm font-medium text-gray-700" data-i18n="scanned_qr_data">Scanned QR Data (TID)</label>
+                    <input type="text" id="input-qr" class="mt-1 w-full border border-gray-300 rounded px-3 py-2 bg-gray-50" placeholder="Scan above or type here..." data-i18n-placeholder="scan_placeholder">
                 </div>
                 <div>
-                    <label class="block text-sm font-bold text-blue-700">Quantity</label>
-                    <input type="number" id="input-quantity" class="mt-1 w-full border-2 border-blue-400 rounded px-3 py-3 text-xl font-bold bg-blue-50" placeholder="Enter quantity...">
+                    <label class="block text-sm font-bold text-blue-700" data-i18n="quantity">Quantity</label>
+                    <input type="number" id="input-quantity" class="mt-1 w-full border-2 border-blue-400 rounded px-3 py-3 text-xl font-bold bg-blue-50" placeholder="Enter quantity..." data-i18n-placeholder="qty_placeholder">
                 </div>
                 <button onclick="saveItem()" class="w-full bg-green-600 text-white py-4 rounded-lg font-bold text-xl shadow hover:bg-green-700 transition">
-                    SAVE TO PHONE
+                    <span data-i18n="save_to_phone">SAVE TO PHONE</span>
                 </button>
             </div>
         </div>
@@ -135,10 +142,10 @@
         <!-- Local Database Section (Current Box) -->
         <div class="bg-white p-4 rounded-lg shadow">
             <div class="flex justify-between items-center mb-2 border-b pb-1">
-                <h2 class="text-lg font-bold">Items in <span id="table-box-name">Box 1</span></h2>
+                <h2 class="text-lg font-bold" data-i18n="items_in">Items in <span id="table-box-name">Box 1</span></h2>
                 <button onclick="printBoxQR()" class="bg-blue-600 text-white px-3 py-1 rounded text-sm font-bold flex items-center shadow hover:bg-blue-700">
                     <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"></path></svg>
-                    Print QR Code
+                    <span data-i18n="print_qr_code">Print QR Code</span>
                 </button>
             </div>
             
@@ -146,10 +153,10 @@
                 <table class="w-full text-left text-sm whitespace-nowrap">
                     <thead>
                         <tr class="bg-gray-200">
-                            <th class="p-2 border">QR Data</th>
-                            <th class="p-2 border">Qty</th>
-                            <th class="p-2 border">Time</th>
-                            <th class="p-2 border">Action</th>
+                            <th class="p-2 border" data-i18n="col_qr">QR Data</th>
+                            <th class="p-2 border" data-i18n="col_qty">Qty</th>
+                            <th class="p-2 border" data-i18n="col_time">Time</th>
+                            <th class="p-2 border" data-i18n="col_action">Action</th>
                         </tr>
                     </thead>
                     <tbody id="db-table-body">
@@ -165,12 +172,159 @@
         let html5QrcodeScanner = null;
         let currentBox = "";
 
+        const i18n = {
+            'en': {
+                title: '100% Offline QR App',
+                ready: 'Ready',
+                start_new_box: 'Start New Box',
+                your_boxes: 'Your Boxes',
+                database_options: 'Database Options',
+                total_scans: 'Total Factory Scans: ',
+                push_cloud: 'Push to Cloud Database',
+                export_csv: 'Export All Data (CSV)',
+                clear_data: 'Clear All Data',
+                global_history: 'Global Scan History',
+                col_box: 'Box',
+                col_qr: 'QR Data',
+                col_qty: 'Qty',
+                col_time: 'Time',
+                col_status: 'Status',
+                col_action: 'Action',
+                back_to_boxes: 'Back to Boxes',
+                scanning_into: 'Currently Scanning Into:',
+                live_scanner: '1. Live Scanner',
+                open_camera: 'Open Camera',
+                scan_another: 'Scan Another Tag',
+                review_add: '2. Review & Add',
+                scanned_qr_data: 'Scanned QR Data (TID)',
+                scan_placeholder: 'Scan above or type here...',
+                quantity: 'Quantity',
+                qty_placeholder: 'Enter quantity...',
+                save_to_phone: 'SAVE TO PHONE',
+                items_in: 'Items in ',
+                print_qr_code: 'Print QR Code',
+                no_boxes: '${i18n[currentLang]["no_boxes"]}',
+                items_scanned: 'items scanned',
+                open_btn: 'Open',
+                no_items_history: '${i18n[currentLang]["no_items_history"]}',
+                synced: '${i18n[currentLang]["synced"]}',
+                pending: '${i18n[currentLang]["pending"]}',
+                no_items_box: 'No items in this box yet.'
+            },
+            'zh-CN': {
+                title: '100% 离线扫码应用',
+                ready: '就绪',
+                start_new_box: '开始新箱子',
+                your_boxes: '您的箱子',
+                database_options: '数据库选项',
+                total_scans: '工厂总扫描量: ',
+                push_cloud: '推送至云端数据库',
+                export_csv: '导出所有数据 (CSV)',
+                clear_data: '清除所有数据',
+                global_history: '全局扫描历史',
+                col_box: '箱号',
+                col_qr: '二维码数据',
+                col_qty: '数量',
+                col_time: '时间',
+                col_status: '状态',
+                col_action: '操作',
+                back_to_boxes: '返回箱子列表',
+                scanning_into: '当前正在扫描到:',
+                live_scanner: '1. 实时扫描器',
+                open_camera: '打开相机',
+                scan_another: '扫描下一个',
+                review_add: '2. 确认并添加',
+                scanned_qr_data: '扫描到的二维码 (TID)',
+                scan_placeholder: '在上方扫描或在此输入...',
+                quantity: '数量',
+                qty_placeholder: '输入数量...',
+                save_to_phone: '保存至手机',
+                items_in: '箱内物品 ',
+                print_qr_code: '打印二维码',
+                no_boxes: '暂无箱子。',
+                items_scanned: '件物品已扫描',
+                open_btn: '打开',
+                no_items_history: '暂无扫描记录。',
+                synced: '☁️ 已同步',
+                pending: '⏳ 待同步',
+                no_items_box: '此箱子暂无物品。'
+            },
+            'zh-TW': {
+                title: '100% 離線掃碼應用',
+                ready: '就緒',
+                start_new_box: '開始新箱子',
+                your_boxes: '您的箱子',
+                database_options: '資料庫選項',
+                total_scans: '工廠總掃描量: ',
+                push_cloud: '推送至雲端資料庫',
+                export_csv: '匯出所有資料 (CSV)',
+                clear_data: '清除所有資料',
+                global_history: '全局掃描歷史',
+                col_box: '箱號',
+                col_qr: '二維碼資料',
+                col_qty: '數量',
+                col_time: '時間',
+                col_status: '狀態',
+                col_action: '操作',
+                back_to_boxes: '返回箱子列表',
+                scanning_into: '目前正在掃描到:',
+                live_scanner: '1. 實時掃描器',
+                open_camera: '打開相機',
+                scan_another: '掃描下一個',
+                review_add: '2. 確認並添加',
+                scanned_qr_data: '掃描到的二維碼 (TID)',
+                scan_placeholder: '在上方掃描或在此輸入...',
+                quantity: '數量',
+                qty_placeholder: '輸入數量...',
+                save_to_phone: '保存至手機',
+                items_in: '箱內物品 ',
+                print_qr_code: '打印二維碼',
+                no_boxes: '暫無箱子。',
+                items_scanned: '件物品已掃描',
+                open_btn: '打開',
+                no_items_history: '暫無掃描記錄。',
+                synced: '☁️ 已同步',
+                pending: '⏳ 待同步',
+                no_items_box: '此箱子暫無物品。'
+            }
+        };
+
+        let currentLang = localStorage.getItem('app_lang') || 'en';
+
+        function setLanguage(lang) {
+            currentLang = lang;
+            localStorage.setItem('app_lang', lang);
+            document.getElementById('lang-select').value = lang;
+            
+            document.querySelectorAll('[data-i18n]').forEach(el => {
+                const key = el.getAttribute('data-i18n');
+                if (i18n[lang][key]) {
+                    el.innerText = i18n[lang][key];
+                }
+            });
+
+            document.querySelectorAll('[data-i18n-placeholder]').forEach(el => {
+                const key = el.getAttribute('data-i18n-placeholder');
+                if (i18n[lang][key]) {
+                    el.placeholder = i18n[lang][key];
+                }
+            });
+            
+            updateDashboardStats();
+        if (typeof setLanguage === "function") setLanguage(currentLang);
+            if(!document.getElementById('screen-scanner').classList.contains('hidden')){
+                renderTable();
+            }
+        }
+
+
         // Initialize Database from LocalStorage
         let localDB = JSON.parse(localStorage.getItem('offline_qr_db')) || [];
         
         // Load Settings on Boot
         let lastCurrentBox = localStorage.getItem('current_box') || '';
         updateDashboardStats();
+        if (typeof setLanguage === "function") setLanguage(currentLang);
 
         function updateDashboardStats() {
             document.getElementById('total-scans-badge').innerText = localDB.length;
@@ -187,7 +341,7 @@
             const uniqueBoxes = Object.keys(boxMap).sort((a,b) => b.localeCompare(a));
             
             if (uniqueBoxes.length === 0) {
-                listContainer.innerHTML = '<p class="text-gray-500 text-sm italic">No boxes created yet.</p>';
+                listContainer.innerHTML = '<p class="text-gray-500 text-sm italic">${i18n[currentLang]["no_boxes"]}</p>';
                 return;
             }
             
@@ -198,10 +352,10 @@
                 div.innerHTML = `
                     <div>
                         <p class="font-bold text-blue-800">${box}</p>
-                        <p class="text-xs text-gray-600">${count} items scanned</p>
+                        <p class="text-xs text-gray-600">${count} ${i18n[currentLang]["items_scanned"]}</p>
                     </div>
                     <button onclick="resumeBox('${box}')" class="bg-blue-100 text-blue-700 px-4 py-2 rounded text-sm font-bold border border-blue-300 hover:bg-blue-200">
-                        Open
+                        ${i18n[currentLang]["open_btn"]}
                     </button>
                 `;
                 listContainer.appendChild(div);
@@ -211,12 +365,12 @@
             const tbody = document.getElementById('global-history-body');
             tbody.innerHTML = '';
             if (localDB.length === 0) {
-                tbody.innerHTML = `<tr><td colspan="5" class="p-4 text-center text-gray-500">No items scanned yet.</td></tr>`;
+                tbody.innerHTML = `<tr><td colspan="5" class="p-4 text-center text-gray-500">${i18n[currentLang]["no_items_history"]}</td></tr>`;
             } else {
                 localDB.forEach(item => {
                     const statusHtml = item.synced 
-                        ? `<span class="text-green-600 font-bold">☁️ Synced</span>` 
-                        : `<span class="text-yellow-600 font-bold">⏳ Pending</span>`;
+                        ? `<span class="text-green-600 font-bold">${i18n[currentLang]["synced"]}</span>` 
+                        : `<span class="text-yellow-600 font-bold">${i18n[currentLang]["pending"]}</span>`;
                     
                     const tr = document.createElement('tr');
                     tr.innerHTML = `
@@ -314,12 +468,13 @@
             if (html5QrcodeScanner && html5QrcodeScanner.isScanning) {
                 html5QrcodeScanner.stop().catch(err => console.log(err));
                 document.getElementById('start-scan-btn').style.display = 'flex';
-                document.getElementById('start-scan-btn').innerText = "Open Camera";
+                document.getElementById('start-scan-btn').innerText = i18n[currentLang]["open_camera"];
             }
             
             document.getElementById('screen-scanner').classList.add('hidden');
             document.getElementById('screen-dashboard').classList.remove('hidden');
             updateDashboardStats();
+        if (typeof setLanguage === "function") setLanguage(currentLang);
         }
 
         function startScanner() {
@@ -338,7 +493,7 @@
         function onScanSuccess(decodedText, decodedResult) {
             html5QrcodeScanner.stop().then(() => {
                 document.getElementById('start-scan-btn').style.display = 'flex';
-                document.getElementById('start-scan-btn').innerText = "Scan Another Tag";
+                document.getElementById('start-scan-btn').innerText = i18n[currentLang]["scan_another"];
                 
                 document.getElementById('input-qr').value = decodedText;
                 
@@ -389,7 +544,7 @@
             const boxItems = localDB.filter(item => item.box === currentBox);
             
             if (boxItems.length === 0) {
-                tbody.innerHTML = `<tr><td colspan="4" class="p-4 text-center text-gray-500">No items in ${currentBox} yet.</td></tr>`;
+                tbody.innerHTML = `<tr><td colspan="4" class="p-4 text-center text-gray-500">${i18n[currentLang]["no_items_box"]}</td></tr>`;
                 return;
             }
 
@@ -413,6 +568,7 @@
                 localStorage.setItem('offline_qr_db', JSON.stringify(localDB));
                 renderTable();
                 updateDashboardStats();
+        if (typeof setLanguage === "function") setLanguage(currentLang);
             }
         }
 
@@ -443,26 +599,28 @@
                     localStorage.setItem('offline_qr_db', JSON.stringify(localDB));
                     alert(`Successfully pushed ${unsynced.length} items to the cloud!`);
                     updateDashboardStats();
+        if (typeof setLanguage === "function") setLanguage(currentLang);
                 } else {
                     alert("Server error. Could not push to cloud.");
                 }
                 btn.innerHTML = originalText;
             } catch (e) {
                 alert("Network error. Make sure the server is reachable.");
-                document.getElementById('push-btn').innerHTML = `<svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"></path></svg> Push to Cloud Database`;
+                document.getElementById('push-btn').innerHTML = `<svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"></path></svg> <span data-i18n="push_cloud">Push to Cloud Database</span>`;
             }
         }
 
         function clearDatabase() {
             const unsynced = localDB.filter(item => !item.synced);
             if (unsynced.length > 0) {
-                alert(`STOP! You have ${unsynced.length} pending items that have not been pushed to the cloud database.\n\nPlease connect to the internet and click "Push to Cloud Database" before clearing your data!`);
+                alert(`STOP! You have ${unsynced.length} pending items that have not been pushed to the cloud database.\n\nPlease connect to the internet and click "<span data-i18n="push_cloud">Push to Cloud Database</span>" before clearing your data!`);
                 return;
             }
             if(confirm("All data has been safely pushed to the cloud. Are you sure you want to clear the phone's memory to start fresh?")) {
                 localDB = [];
                 localStorage.setItem('offline_qr_db', JSON.stringify(localDB));
                 updateDashboardStats();
+        if (typeof setLanguage === "function") setLanguage(currentLang);
                 localStorage.removeItem('current_box');
                 alert("Database cleared from phone.");
             }
