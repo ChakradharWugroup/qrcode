@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Database History</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        /* Mobile friendly table scroll */
+        .table-container {
+            overflow-x: auto;
+        }
+    </style>
+</head>
+<body class="bg-gray-100 p-4 md:p-8">
+    <div class="max-w-7xl mx-auto">
+        <div class="flex justify-between items-center mb-6">
+            <a href="/" class="text-blue-600 hover:underline font-semibold">&larr; Back to Scanner</a>
+            <a href="/export/csv" class="bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-4 rounded shadow flex items-center">
+                <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
+                Export to Excel/CSV
+            </a>
+        </div>
+        
+        <div class="bg-white p-4 md:p-6 rounded-lg shadow-md">
+            <h2 class="text-2xl font-bold mb-4 text-gray-800">Complete Database History</h2>
+            <p class="text-gray-600 mb-6">Showing all tags scanned into the system. Use your browser's search feature (Ctrl+F or Find in Page) to search for specific items.</p>
+
+            <div class="table-container">
+                <table class="w-full text-left border-collapse whitespace-nowrap">
+                    <thead>
+                        <tr class="bg-gray-800 text-white">
+                            <th class="p-3 border">Scan Date</th>
+                            <th class="p-3 border">QR Data (TID)</th>
+                            <th class="p-3 border">Style No</th>
+                            <th class="p-3 border">Bundle</th>
+                            <th class="p-3 border">Quantity</th>
+                            <th class="p-3 border">Size</th>
+                            <th class="p-3 border">Color</th>
+                            <th class="p-3 border">Bed No</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for item in items %}
+                        <tr class="hover:bg-gray-50 border-b">
+                            <td class="p-3 border text-sm text-gray-600">{{ item.created_at.strftime('%Y-%m-%d %H:%M') if item.created_at else '' }}</td>
+                            <td class="p-3 border font-mono text-blue-600">{{ item.qr_data }}</td>
+                            <td class="p-3 border">{{ item.style_no }}</td>
+                            <td class="p-3 border">{{ item.bundle_no }}</td>
+                            <td class="p-3 border font-bold text-green-600">{{ item.quantity }}</td>
+                            <td class="p-3 border">{{ item.size }}</td>
+                            <td class="p-3 border">{{ item.color }}</td>
+                            <td class="p-3 border">{{ item.bed_no }}</td>
+                        </tr>
+                        {% else %}
+                        <tr>
+                            <td colspan="8" class="p-6 text-center text-gray-500">No tags have been scanned yet!</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

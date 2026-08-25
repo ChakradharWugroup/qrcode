@@ -142,6 +142,48 @@ async def api_upload_qr(collection_id: str, file: UploadFile = File(...)):
     }
 
 # ==========================================
+# DATABASE HISTORY AND EXPORT
+# ==========================================
+
+@app.get("/history", response_class=HTMLResponse)
+def view_history(request: Request, db: Session = Depends(get_db)):
+    items = db.query(models.GarmentQRCode).order_by(models.GarmentQRCode.created_at.desc()).all()
+    return templates.TemplateResponse(request=request, name="history.html", context={"request": request, "items": items})
+
+@app.get("/export/csv")
+def export_csv(db: Session = Depends(get_db)):
+    import csv
+    from io import StringIO
+    from fastapi.responses import StreamingResponse
+    
+    items = db.query(models.GarmentQRCode).order_by(models.GarmentQRCode.created_at.desc()).all()
+    
+    output = StringIO()
+    writer = csv.writer(output)
+    writer.writerow(["ID", "Date", "Collection", "QR Data (TID)", "Style No", "Bed No", "Bundle No", "Quantity", "Color", "Size"])
+    
+    for item in items:
+        writer.writerow([
+            item.id,
+            item.created_at.strftime("%Y-%m-%d %H:%M:%S") if item.created_at else "",
+            item.collection_id,
+            item.qr_data,
+            item.style_no,
+            item.bed_no,
+            item.bundle_no,
+            item.quantity,
+            item.color,
+            item.size
+        ])
+    
+    output.seek(0)
+    return StreamingResponse(
+        iter([output.getvalue()]),
+        media_type="text/csv",
+        headers={"Content-Disposition": f"attachment; filename=master_qr_database.csv"}
+    )
+
+# ==========================================
 # OLD JINJA2 ROUTES (Keep for local testing)
 # ==========================================
 
