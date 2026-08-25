@@ -2,8 +2,8 @@ import os
 from sqlalchemy import create_engine
 from sqlalchemy.orm import declarative_base, sessionmaker
 
-# Use cloud database if provided, otherwise default to local SQLite
-DATABASE_URL = os.getenv("DATABASE_URL", "sqlite:///./qrmanager.db")
+# Use cloud database if provided, otherwise default to TiDB Serverless cluster
+DATABASE_URL = os.getenv("DATABASE_URL", "mysql+pymysql://NxhLTEzTjPVqirD.root:HWxDC9wu8g6Dv612@gateway01.ap-northeast-1.prod.aws.tidbcloud.com:4000/test?ssl_verify_cert=true&ssl_verify_identity=true")
 
 # SQLAlchemy requires 'postgresql://' instead of 'postgres://'
 if DATABASE_URL.startswith("postgres://"):
