@@ -35,6 +35,7 @@
                 });
             } catch (err) {
                 console.error("Error fetching collections:", err);
+                document.getElementById('collection-list').innerHTML = `<li class="py-4 text-red-500 font-bold">Error connecting to the backend server. It may still be booting up or it crashed. Check the Render logs!</li>`;
             }
         }
 
@@ -51,7 +52,7 @@
                 const data = await res.json();
                 window.location.href = `collection.html?id=${data.id}`;
             } catch (err) {
-                alert("Error creating collection");
+                alert("Error creating collection. The backend might be asleep or crashed. Check Render dashboard logs.");
             }
         }
 
