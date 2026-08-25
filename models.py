@@ -16,8 +16,8 @@ def generate_collection_id():
 class Collection(Base):
     __tablename__ = "collections"
 
-    id = Column(String, primary_key=True, default=generate_collection_id, index=True)
-    name = Column(String, index=True)
+    id = Column(String(255), primary_key=True, default=generate_collection_id, index=True)
+    name = Column(String(255), index=True)
     created_at = Column(DateTime(timezone=True), default=get_china_time)
 
     qr_codes = relationship("GarmentQRCode", back_populates="collection")
@@ -26,18 +26,18 @@ class GarmentQRCode(Base):
     __tablename__ = "garment_qr_codes"
 
     id = Column(Integer, primary_key=True, index=True)
-    collection_id = Column(String, ForeignKey("collections.id"))
+    collection_id = Column(String(255), ForeignKey("collections.id"))
     
-    qr_data = Column(String, index=True) # The actual decoded URL/text from the QR
+    qr_data = Column(String(1000), index=True) # The actual decoded URL/text from the QR
     
     # Label specific data
-    company_name = Column(String, default="江西大藤制衣有限公司")
-    style_no = Column(String)
-    bed_no = Column(String)
-    bundle_no = Column(String)
+    company_name = Column(String(255), default="江西大藤制衣有限公司")
+    style_no = Column(String(255))
+    bed_no = Column(String(255))
+    bundle_no = Column(String(255))
     quantity = Column(Integer)
-    color = Column(String)
-    size = Column(String)
+    color = Column(String(255))
+    size = Column(String(255))
     total_bundles = Column(Integer, nullable=True)
     total_quantity = Column(Integer, nullable=True)
 
