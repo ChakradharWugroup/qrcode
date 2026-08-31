@@ -2,12 +2,7 @@ import os
 from sqlalchemy import create_engine
 from sqlalchemy.orm import declarative_base, sessionmaker
 
-# Load URL from environment, or use TiDB cluster as fallback
-_env_url = os.getenv("DATABASE_URL", "").strip()
-if _env_url.startswith("mysql") or _env_url.startswith("postgres") or _env_url.startswith("sqlite"):
-    DATABASE_URL = _env_url
-else:
-    DATABASE_URL = "mysql+pymysql://NxhLTE2TjPVqirD.root:7PkdDwgmEcQQUuRW@gateway01.ap-northeast-1.prod.aws.tidbcloud.com:4000/test?ssl_verify_cert=true&ssl_verify_identity=true"
+DATABASE_URL = "mysql+pymysql://NxhLTE2TjPVqirD.root:7PkdDwgmEcQQUuRW@gateway01.ap-northeast-1.prod.aws.tidbcloud.com:4000/test?ssl_verify_cert=true&ssl_verify_identity=true"
 
 # SQLAlchemy requires 'postgresql://' instead of 'postgres://'
 if DATABASE_URL.startswith("postgres://"):
