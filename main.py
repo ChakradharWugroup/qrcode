@@ -400,29 +400,34 @@ class SyncItem(BaseModel):
     qty: int
     timestamp: str
 
+import traceback
+
 @app.post("/api/sync")
 def sync_offline_data(items: List[SyncItem], db: Session = Depends(get_db)):
-    for item in items:
-        # Check if collection exists by name
-        collection = db.query(models.Collection).filter(models.Collection.name == item.box).first()
-        if not collection:
-            collection = models.Collection(id=str(uuid.uuid4()), name=item.box)
-            db.add(collection)
-            db.commit()
-            db.refresh(collection)
+    try:
+        for item in items:
+            # Check if collection exists by name
+            collection = db.query(models.Collection).filter(models.Collection.name == item.box).first()
+            if not collection:
+                collection = models.Collection(id=str(uuid.uuid4()), name=item.box)
+                db.add(collection)
+                db.commit()
+                db.refresh(collection)
+                
+            # Add item if it doesn't exist
+            existing_item = db.query(models.GarmentQRCode).filter(
+                models.GarmentQRCode.collection_id == collection.id,
+                models.GarmentQRCode.qr_data == item.qr
+            ).first()
             
-        # Add item if it doesn't exist
-        existing_item = db.query(models.GarmentQRCode).filter(
-            models.GarmentQRCode.collection_id == collection.id,
-            models.GarmentQRCode.qr_data == item.qr
-        ).first()
-        
-        if not existing_item:
-            new_item = models.GarmentQRCode(
-                collection_id=collection.id,
-                qr_data=item.qr,
-                quantity=item.qty
-            )
-            db.add(new_item)
-    db.commit()
-    return {"status": "success", "synced_count": len(items)}
+            if not existing_item:
+                new_item = models.GarmentQRCode(
+                    collection_id=collection.id,
+                    qr_data=item.qr,
+                    quantity=item.qty
+                )
+                db.add(new_item)
+        db.commit()
+        return {"status": "success", "synced_count": len(items)}
+    except Exception as e:
+        return {"status": "error", "message": traceback.format_exc()}

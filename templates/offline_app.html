@@ -591,14 +591,21 @@
                 });
                 
                 if (response.ok) {
+                    const data = await response.json();
+                    if (data.status === "error") {
+                        alert("Server Error Details:\n" + data.message);
+                        btn.innerHTML = originalText;
+                        return;
+                    }
                     localDB.forEach(item => { item.synced = true; });
                     localStorage.setItem('offline_qr_db', JSON.stringify(localDB));
                     alert(`Successfully pushed ${unsynced.length} items to the cloud!`);
                     updateDashboardStats();
                 } else {
-                    alert("Server error. Could not push to cloud.");
+                    const errText = await response.text();
+                    alert("Server error. Could not push to cloud.\n\nDetails: " + errText);
+                    btn.innerHTML = originalText;
                 }
-                btn.innerHTML = originalText;
             } catch (e) {
                 alert("Network error. Make sure the server is reachable.");
                 document.getElementById('push-btn').innerHTML = `<svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"></path></svg> <span data-i18n="push_cloud">Push to Cloud Database</span>`;
