@@ -95,7 +95,7 @@ async def sync_qiaofei(request: Request, timeframe: str = 'month'):
                 
             ticket_url = "https://saofeiapi.huole.cn/common/cut_order/get_cut_order_ticket_list"
             try:
-                ticket_resp = requests.post(ticket_url, params=params, json={"cut_order_id": cut_order_id, "page": 1, "page_size": 10000}, headers=headers, timeout=15)
+                ticket_resp = requests.post(ticket_url, params=params, json={"cut_order_id": cut_order_id, "page": 1, "page_size": 10000}, headers=headers, timeout=30)
                 ticket_data = ticket_resp.json()
                 
                 res = {}
@@ -122,7 +122,7 @@ async def sync_qiaofei(request: Request, timeframe: str = 'month'):
             except:
                 return {}
                 
-        with concurrent.futures.ThreadPoolExecutor(max_workers=20) as executor:
+        with concurrent.futures.ThreadPoolExecutor(max_workers=5) as executor:
             futures = [executor.submit(fetch_ticket_for_order, o) for o in orders]
             for future in concurrent.futures.as_completed(futures):
                 all_tickets.update(future.result())
