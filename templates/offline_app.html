@@ -708,22 +708,7 @@ try {
                 
                 if (navigator.vibrate) navigator.vibrate(200);
                 
-                // Lookup Qiaofei Master Data to auto-fill quantity
-                let autoFilled = false;
-                let match = decodedText.match(/tid=(\d+)/);
-                if (match) {
-                    let tid = match[1];
-                    try {
-                        const masterDataStr = localStorage.getItem('master_tickets');
-                        if (masterDataStr) {
-                            const masterData = JSON.parse(masterDataStr);
-                            if (masterData[tid] && masterData[tid].quantity) {
-                                document.getElementById('input-quantity').value = masterData[tid].quantity;
-                                autoFilled = true;
-                            }
-                        }
-                    } catch (e) {}
-                }
+                lookupAndDisplayMasterData();
                 
                 if (autoFilled) {
                     saveItem(); // Auto save if quantity is known
