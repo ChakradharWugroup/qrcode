@@ -11,3 +11,4 @@ rapidocr-onnxruntime
 
 pymysql
 cryptography
+requests

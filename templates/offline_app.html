@@ -210,12 +210,12 @@
                 save_to_phone: 'SAVE TO PHONE',
                 items_in: 'Items in ',
                 print_qr_code: 'Print QR Code',
-                no_boxes: '${i18n[currentLang]["no_boxes"]}',
+                no_boxes: 'No boxes yet.',
                 items_scanned: 'items scanned',
                 open_btn: 'Open',
-                no_items_history: '${i18n[currentLang]["no_items_history"]}',
-                synced: '${i18n[currentLang]["synced"]}',
-                pending: '${i18n[currentLang]["pending"]}',
+                no_items_history: 'No scan history yet.',
+                synced: 'Synced',
+                pending: 'Pending',
                 no_items_box: 'No items in this box yet.'
             },
             'zh-CN': {
@@ -348,7 +348,7 @@
             const uniqueBoxes = Object.keys(boxMap).sort((a,b) => b.localeCompare(a));
             
             if (uniqueBoxes.length === 0) {
-                listContainer.innerHTML = '<p class="text-gray-500 text-sm italic">${i18n[currentLang]["no_boxes"]}</p>';
+                listContainer.innerHTML = `<p class="text-gray-500 text-sm italic">${i18n[currentLang]["no_boxes"]}</p>`;
                 return;
             }
             
