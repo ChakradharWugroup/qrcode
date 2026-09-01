@@ -1,4 +1,4 @@
-const CACHE_NAME = 'qr-offline-v6';
+const CACHE_NAME = 'qr-offline-v7';
 const ASSETS = [
   '/offline',
   '/static/icon.png',

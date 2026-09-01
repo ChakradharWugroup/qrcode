@@ -448,7 +448,8 @@
             }
         };
 
-        let currentLang = localStorage.getItem('app_lang') || 'en';
+        let currentLang = 'en';
+try { currentLang = localStorage.getItem('app_lang') || 'en'; } catch(e) {}
 
         function setLanguage(lang) {
             currentLang = lang;
@@ -477,7 +478,14 @@
 
 
         // Initialize Database from LocalStorage
-        let localDB = JSON.parse(localStorage.getItem('offline_qr_db')) || [];
+        let localDB = [];
+try { 
+    const rawDb = localStorage.getItem('offline_qr_db');
+    if (rawDb) localDB = JSON.parse(rawDb) || [];
+} catch(e) { 
+    console.error("DB Corrupted"); 
+    localDB = [];
+}
         
         // Load Settings on Boot
         let lastCurrentBox = localStorage.getItem('current_box') || '';
