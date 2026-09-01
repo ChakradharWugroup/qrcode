@@ -156,25 +156,44 @@
         <!-- Manual Entry Section -->
         <div class="bg-white p-4 rounded-lg shadow">
             <h2 class="text-lg font-bold mb-2 border-b pb-1" data-i18n="review_add">2. Review & Add</h2>
-            <div class="space-y-4">
-                                <div>
-                    <label class="block text-sm font-medium text-gray-700" data-i18n="scanned_qr_data">Scanned QR Data (TID)</label>
-                    <input type="text" id="input-qr" oninput="lookupAndDisplayMasterData()" class="mt-1 w-full border border-gray-300 rounded px-3 py-2 bg-gray-50" placeholder="Scan above or type here..." data-i18n-placeholder="scan_placeholder">
+            <div class="space-y-3 mt-3">
+                <div>
+                    <label class="block text-xs font-bold text-gray-700" data-i18n="scanned_qr_data">QR Code URL/Data</label>
+                    <input type="text" id="input-qr" oninput="lookupAndDisplayMasterData()" class="mt-1 w-full border border-gray-300 rounded px-3 py-2 bg-gray-50 text-sm" placeholder="Scan above or type here...">
                 </div>
                 
-                <!-- NEW: Master Data Display -->
-                <div id="master-data-info" class="bg-indigo-50 border border-indigo-200 p-3 rounded-lg shadow-inner">
-                    <div class="grid grid-cols-3 gap-2 text-sm">
-                        <div><span class="text-gray-500 text-xs block">Style</span><strong id="info-style" class="text-indigo-800"></strong></div>
-                        <div><span class="text-gray-500 text-xs block">Color</span><strong id="info-color" class="text-indigo-800"></strong></div>
-                        <div><span class="text-gray-500 text-xs block">Size</span><strong id="info-size" class="text-indigo-800"></strong></div>
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="block text-[11px] font-bold text-gray-700">Company Name</label>
+                        <input type="text" id="input-company" class="mt-1 w-full border border-gray-300 rounded px-2 py-2 text-sm">
+                    </div>
+                    <div>
+                        <label class="block text-[11px] font-bold text-gray-700">Style No (款号)</label>
+                        <input type="text" id="input-style" class="mt-1 w-full border border-gray-300 rounded px-2 py-2 text-sm">
+                    </div>
+                    <div>
+                        <label class="block text-[11px] font-bold text-gray-700">Bed No (床次)</label>
+                        <input type="text" id="input-bed" class="mt-1 w-full border border-gray-300 rounded px-2 py-2 text-sm">
+                    </div>
+                    <div>
+                        <label class="block text-[11px] font-bold text-gray-700">Bundle No (扎号)</label>
+                        <input type="text" id="input-bundle" class="mt-1 w-full border border-gray-300 rounded px-2 py-2 text-sm">
+                    </div>
+                    <div>
+                        <label class="block text-[11px] font-bold text-blue-700">Quantity (数量)</label>
+                        <input type="number" id="input-quantity" class="mt-1 w-full border-2 border-blue-400 rounded px-2 py-2 font-bold bg-blue-50 text-sm" placeholder="Verify before adding">
+                    </div>
+                    <div>
+                        <label class="block text-[11px] font-bold text-gray-700">Color (颜色)</label>
+                        <input type="text" id="input-color" class="mt-1 w-full border border-gray-300 rounded px-2 py-2 text-sm">
+                    </div>
+                    <div class="col-span-2">
+                        <label class="block text-[11px] font-bold text-gray-700">Size</label>
+                        <input type="text" id="input-size" class="mt-1 w-full border border-gray-300 rounded px-2 py-2 text-sm">
                     </div>
                 </div>
-                <div>
-                    <label class="block text-sm font-bold text-blue-700" data-i18n="quantity">Quantity</label>
-                    <input type="number" id="input-quantity" class="mt-1 w-full border-2 border-blue-400 rounded px-3 py-3 text-xl font-bold bg-blue-50" placeholder="Enter quantity..." data-i18n-placeholder="qty_placeholder">
-                </div>
-                <button onclick="saveItem()" class="w-full bg-green-600 text-white py-4 rounded-lg font-bold text-xl shadow hover:bg-green-700 transition">
+                
+                <button onclick="saveItem()" class="w-full bg-green-600 text-white py-3 rounded-lg font-bold text-lg shadow hover:bg-green-700 transition mt-2">
                     <span data-i18n="save_to_phone">SAVE TO PHONE</span>
                 </button>
             </div>
@@ -674,7 +693,14 @@
             const qrText = document.getElementById('input-qr').value.trim();
             const tid = extractTid(qrText);
             
-            let s = '-', c = '-', z = '-';
+            // Reset fields
+            document.getElementById('input-company').value = '';
+            document.getElementById('input-style').value = '';
+            document.getElementById('input-bed').value = '';
+            document.getElementById('input-bundle').value = '';
+            document.getElementById('input-color').value = '';
+            document.getElementById('input-size').value = '';
+            document.getElementById('input-quantity').value = '';
             
             if (tid) {
                 try {
@@ -683,29 +709,17 @@
                         const masterData = JSON.parse(masterDataStr);
                         const t = masterData[tid];
                         if (t) {
-                            s = t.style || '-';
-                            c = t.color || '-';
-                            z = t.size || '-';
-                            
-                            // Only overwrite quantity if it's empty, or force it to match?
-                            // Let's force it to match the ticket by default
+                            document.getElementById('input-company').value = t.company || '';
+                            document.getElementById('input-style').value = t.style || '';
+                            document.getElementById('input-bed').value = t.bed || '';
+                            document.getElementById('input-bundle').value = t.bundle || '';
+                            document.getElementById('input-color').value = t.color || '';
+                            document.getElementById('input-size').value = t.size || '';
                             document.getElementById('input-quantity').value = t.quantity || '';
-                        } else {
-                            s = 'Not Found';
-                            c = 'Not Found';
-                            z = 'Not Found';
                         }
-                    } else {
-                        s = 'No Data';
-                        c = 'No Data';
-                        z = 'No Data';
                     }
                 } catch(e) { console.error(e); }
             }
-            
-            document.getElementById('info-style').innerText = s;
-            document.getElementById('info-color').innerText = c;
-            document.getElementById('info-size').innerText = z;
         }
 
         function saveItem() {
@@ -723,27 +737,24 @@
                 return;
             }
             
-            let styleStr = "-";
-            let colorStr = "-";
-            let sizeStr = "-";
-            let extraDetails = "";
-            
             const tid = extractTid(qr);
-            if (tid) {
-                try {
-                    const masterDataStr = localStorage.getItem('master_tickets');
-                    if (masterDataStr) {
-                        const masterData = JSON.parse(masterDataStr);
-                        if (masterData[tid]) {
-                            const t = masterData[tid];
-                            styleStr = t.style || "-";
-                            colorStr = t.color || "-";
-                            sizeStr = t.size || "-";
-                            extraDetails = `<br/><span class="text-xs text-purple-600 font-bold">${t.color} | ${t.size}</span><br/><span class="text-xs text-gray-500">${t.style}</span>`;
-                        }
-                    }
-                } catch(e) {}
-            }
+            const company = document.getElementById('input-company').value.trim();
+            const style = document.getElementById('input-style').value.trim();
+            const bed = document.getElementById('input-bed').value.trim();
+            const bundle = document.getElementById('input-bundle').value.trim();
+            const color = document.getElementById('input-color').value.trim();
+            const size = document.getElementById('input-size').value.trim();
+            
+            // Build extraDetails for table view
+            let extraDetails = `<br/><span class="text-[10px] text-gray-500 leading-tight block mt-1">`;
+            let parts = [];
+            if(style) parts.push(`Style: ${style}`);
+            if(color) parts.push(`Color: ${color}`);
+            if(size) parts.push(`Size: ${size}`);
+            if(bed) parts.push(`Bed: ${bed}`);
+            if(bundle) parts.push(`Bundle: ${bundle}`);
+            if(company) parts.push(`Company: ${company}`);
+            extraDetails += parts.join(' | ') + `</span>`;
 
             const newItem = {
                 id: Date.now(),
@@ -751,10 +762,13 @@
                 qr: qr,
                 tid: tid,
                 qty: qty,
-                style: styleStr,
-                color: colorStr,
-                size: sizeStr,
-                extraDetails: extraDetails,
+                company: company,
+                style: style,
+                bed: bed,
+                bundle: bundle,
+                color: color,
+                size: size,
+                extraDetails: parts.length > 0 ? extraDetails : "",
                 timestamp: new Date().toLocaleString(),
                 synced: false
             };
@@ -762,9 +776,9 @@
             localDB.unshift(newItem); 
             localStorage.setItem('offline_qr_db', JSON.stringify(localDB));
             
+            // Clear inputs
             document.getElementById('input-qr').value = '';
-            document.getElementById('input-quantity').value = '';
-            lookupAndDisplayMasterData(); // Reset the labels
+            lookupAndDisplayMasterData(); // this clears the rest
             
             renderTable();
         }

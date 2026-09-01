@@ -105,11 +105,17 @@ async def sync_qiaofei(request: Request, timeframe: str = 'month'):
                         header = t.get('header_data', {})
                         tid = header.get('ticket_id')
                         if tid:
+                            # Guessing bundle number field based on common Qiaofei schemas
+                            bundle_no = header.get('package_no', header.get('ph', header.get('pack_no', header.get('code', ''))))
+                            
                             res[str(tid)] = {
                                 "color": header.get('co_val', ''),
                                 "size": header.get('si_val', ''),
                                 "quantity": header.get('num', ''),
-                                "style": style_name,
+                                "style": order.get('spu_no', order.get('spu_name', '')),
+                                "bed": order.get('cut_order_no', ''),
+                                "company": order.get('custom_name', ''),
+                                "bundle": bundle_no,
                                 "cut_order_id": cut_order_id
                             }
                 return res
