@@ -56,15 +56,15 @@
             <span data-i18n="sync_qiaofei">Sync Qiaofei Data</span>
         </button>
 
-        <div id="sync-data-summary" class="bg-indigo-50 border border-indigo-200 rounded-lg p-3 hidden">
+                <div id="sync-data-summary" class="bg-indigo-50 border border-indigo-200 rounded-lg p-3 hidden mt-3">
             <div class="flex justify-between items-center cursor-pointer" onclick="document.getElementById('sync-details').classList.toggle('hidden')">
                 <div class="flex items-center space-x-2">
                     <svg class="w-5 h-5 text-indigo-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>
                     <span class="text-sm font-bold text-indigo-800" id="sync-summary-text">0 tickets loaded</span>
                 </div>
-                <span class="text-xs text-indigo-600 underline font-semibold">View Stats</span>
+                <span class="text-xs text-indigo-600 underline font-semibold">View Data</span>
             </div>
-            <div id="sync-details" class="mt-3 text-xs text-gray-700 hidden max-h-40 overflow-y-auto border-t border-indigo-100 pt-2">
+            <div id="sync-details" class="mt-3 text-xs text-gray-700 hidden max-h-64 overflow-y-auto border-t border-indigo-200 pt-2">
             </div>
         </div>
 
@@ -363,18 +363,36 @@
                 summaryDiv.classList.remove('hidden');
                 document.getElementById('sync-summary-text').innerText = `${keys.length} Master Tickets Ready`;
                 
-                // Group by style
-                const styles = {};
-                keys.forEach(k => {
-                    const style = tickets[k].style || 'Unknown Style';
-                    styles[style] = (styles[style] || 0) + 1;
+                let detailsHtml = `
+                    <div class="overflow-x-auto pb-2">
+                        <table class="w-full text-left border-collapse mt-1 whitespace-nowrap">
+                            <thead>
+                                <tr class="bg-indigo-100 text-indigo-800 sticky top-0 shadow-sm">
+                                    <th class="p-1.5 border border-indigo-200">TID</th>
+                                    <th class="p-1.5 border border-indigo-200">Style</th>
+                                    <th class="p-1.5 border border-indigo-200">Color</th>
+                                    <th class="p-1.5 border border-indigo-200">Size</th>
+                                    <th class="p-1.5 border border-indigo-200">Qty</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                `;
+                
+                // Add rows
+                keys.forEach(tid => {
+                    const t = tickets[tid];
+                    detailsHtml += `
+                        <tr class="border-b border-gray-200 hover:bg-gray-50">
+                            <td class="p-1 border border-gray-200 text-indigo-600 font-mono">${tid}</td>
+                            <td class="p-1 border border-gray-200 max-w-[120px] truncate" title="${t.style || '-'}">${t.style || '-'}</td>
+                            <td class="p-1 border border-gray-200">${t.color || '-'}</td>
+                            <td class="p-1 border border-gray-200">${t.size || '-'}</td>
+                            <td class="p-1 border border-gray-200 font-bold">${t.quantity || '-'}</td>
+                        </tr>
+                    `;
                 });
                 
-                let detailsHtml = '<ul class="space-y-1">';
-                for(const [style, count] of Object.entries(styles)) {
-                    detailsHtml += `<li class="flex justify-between border-b border-gray-100 pb-1"><strong>${style}</strong> <span class="text-indigo-600 font-bold">${count} pcs</span></li>`;
-                }
-                detailsHtml += '</ul>';
+                detailsHtml += '</tbody></table></div>';
                 
                 document.getElementById('sync-details').innerHTML = detailsHtml;
                 
