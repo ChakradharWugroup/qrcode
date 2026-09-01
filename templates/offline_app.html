@@ -474,7 +474,40 @@
             updateDashboardStats();
         }
 
-        function startScanner() {
+        // --- Qiaofei Data Sync Logic ---
+        document.getElementById('sync-master-btn').addEventListener('click', async () => {
+            const btn = document.getElementById('sync-master-btn');
+            const originalHtml = btn.innerHTML;
+            btn.innerHTML = '<span class="i18n" data-en="Syncing..." data-zh="同步中...">Syncing...</span>';
+            btn.disabled = true;
+            
+            try {
+                const response = await fetch('/api/sync_qiaofei', {
+                    method: 'POST',
+                });
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    if (data.success) {
+                        localStorage.setItem('master_tickets', JSON.stringify(data.tickets));
+                        alert(`Successfully synced ${data.total_tickets} tickets from Qiaofei!`);
+                    } else {
+                        alert("Error: " + data.error);
+                    }
+                } else {
+                    alert("Failed to connect to server for sync.");
+                }
+            } catch (err) {
+                alert("Network error: " + err.message);
+            } finally {
+                btn.innerHTML = originalHtml;
+                btn.disabled = false;
+                setLanguage(currentLang);
+            }
+        });
+
+        // --- Start New Box Logic ---
+        document.getElementById('start-new-box').addEventListener('click', () => {
             document.getElementById('start-scan-btn').style.display = 'none';
             html5QrcodeScanner = new Html5Qrcode("reader");
             
@@ -496,7 +529,28 @@
                 
                 if (navigator.vibrate) navigator.vibrate(200);
                 
-                document.getElementById('input-quantity').focus();
+                // Lookup Qiaofei Master Data to auto-fill quantity
+                let autoFilled = false;
+                let match = decodedText.match(/tid=(\d+)/);
+                if (match) {
+                    let tid = match[1];
+                    try {
+                        const masterDataStr = localStorage.getItem('master_tickets');
+                        if (masterDataStr) {
+                            const masterData = JSON.parse(masterDataStr);
+                            if (masterData[tid] && masterData[tid].quantity) {
+                                document.getElementById('input-quantity').value = masterData[tid].quantity;
+                                autoFilled = true;
+                            }
+                        }
+                    } catch (e) {}
+                }
+                
+                if (autoFilled) {
+                    saveItem(); // Auto save if quantity is known
+                } else {
+                    document.getElementById('input-quantity').focus();
+                }
             });
         }
 
@@ -514,12 +568,29 @@
                 alert("DUPLICATE WARNING: This QR code is already in this box!");
                 return;
             }
+            
+            // Look up master data for details
+            let extraDetails = "";
+            let match = qr.match(/tid=(\d+)/);
+            if (match) {
+                try {
+                    const masterDataStr = localStorage.getItem('master_tickets');
+                    if (masterDataStr) {
+                        const masterData = JSON.parse(masterDataStr);
+                        if (masterData[match[1]]) {
+                            const t = masterData[match[1]];
+                            extraDetails = `<br/><span class="text-xs text-purple-600 font-bold">${t.color} | ${t.size}</span><br/><span class="text-xs text-gray-500">${t.style}</span>`;
+                        }
+                    }
+                } catch(e) {}
+            }
 
             const newItem = {
                 id: Date.now(),
                 box: currentBox,
                 qr: qr,
                 qty: qty,
+                extraDetails: extraDetails,
                 timestamp: new Date().toLocaleString(),
                 synced: false
             };
@@ -547,12 +618,13 @@
 
             boxItems.forEach(item => {
                 const tr = document.createElement('tr');
+                const details = item.extraDetails ? item.extraDetails : "";
                 tr.innerHTML = `
-                    <td class="p-2 border text-blue-600 font-mono text-xs">${item.qr}</td>
+                    <td class="p-2 border text-blue-600 font-mono text-xs" style="word-break: break-all;">${item.qr}${details}</td>
                     <td class="p-2 border font-bold text-green-600">${item.qty}</td>
                     <td class="p-2 border text-xs text-gray-500">${item.timestamp}</td>
                     <td class="p-2 border text-center">
-                        <button onclick="deleteItem(${item.id})" class="text-red-500 font-bold px-2">&times;</button>
+                        <button onclick="deleteItem(${item.id})" class="text-red-500 font-bold hover:text-red-700">X</button>
                     </td>
                 `;
                 tbody.appendChild(tr);
