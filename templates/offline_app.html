@@ -670,8 +670,19 @@
                             s = t.style || '-';
                             c = t.color || '-';
                             z = t.size || '-';
+                            
+                            // Only overwrite quantity if it's empty, or force it to match?
+                            // Let's force it to match the ticket by default
                             document.getElementById('input-quantity').value = t.quantity || '';
+                        } else {
+                            s = 'Not Found';
+                            c = 'Not Found';
+                            z = 'Not Found';
                         }
+                    } else {
+                        s = 'No Data';
+                        c = 'No Data';
+                        z = 'No Data';
                     }
                 } catch(e) { console.error(e); }
             }
