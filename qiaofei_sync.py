@@ -8,7 +8,7 @@ import traceback
 router = APIRouter()
 
 @router.post("/api/sync_qiaofei")
-async def sync_qiaofei(request: Request, limit: int = 50):
+async def sync_qiaofei(request: Request, timeframe: str = 'month'):
     try:
         # 1. Login to Qiaofei
         session = requests.Session()
@@ -39,16 +39,48 @@ async def sync_qiaofei(request: Request, limit: int = 50):
             "v": login_data.get('v', '')
         }
         
-        # 2. Fetch the Production Orders List
+        # 2. Compute target date
+        import datetime
+        today = datetime.date.today()
+        if timeframe == 'today':
+            target_date = today
+        elif timeframe == 'yesterday':
+            target_date = today - datetime.timedelta(days=1)
+        elif timeframe == 'week':
+            target_date = today - datetime.timedelta(days=7)
+        elif timeframe == '3months':
+            target_date = today - datetime.timedelta(days=90)
+        else: # month
+            target_date = today - datetime.timedelta(days=30)
+            
+        target_date_str = target_date.strftime("%Y-%m-%d")
+
+        # 3. Fetch the Production Orders List
         list_url = "https://saofeiapi.huole.cn/common/cut_order/get_product_list"
-        # Fetching first 50 latest orders
-        list_resp = session.post(list_url, params=params, json={"page": 1, "page_size": 100000}, headers=headers)
+        list_resp = session.post(list_url, params=params, json={"page": 1, "page_size": 2000}, headers=headers)
         list_data = list_resp.json()
         
         if str(list_data.get('code')) not in ['1', '200']:
             return JSONResponse(status_code=400, content={"error": "Failed to fetch production list"})
             
-        orders = list_data.get('data', {}).get('list', [])[:limit]
+        raw_orders = list_data.get('data', {}).get('list', [])
+        
+        # Filter orders by cut_time >= target_date
+        orders = []
+        for o in raw_orders:
+            cut_time = o.get('cut_time')
+            if not cut_time:
+                # If no cut_time, just include it to be safe if it's recent
+                orders.append(o)
+                continue
+                
+            # cut_time format: "2026-09-01"
+            if cut_time >= target_date_str:
+                orders.append(o)
+                
+        # Hard limit to 2000 orders to prevent server timeouts (this is ~100k tickets!)
+        orders = orders[:2000]
+        
         
         all_tickets = {}
         
