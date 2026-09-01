@@ -95,7 +95,7 @@ async def sync_qiaofei(request: Request, timeframe: str = 'month'):
                 
             ticket_url = "https://saofeiapi.huole.cn/common/cut_order/get_cut_order_ticket_list"
             try:
-                ticket_resp = requests.post(ticket_url, params=params, json={"cut_order_id": cut_order_id}, headers=headers, timeout=15)
+                ticket_resp = requests.post(ticket_url, params=params, json={"cut_order_id": cut_order_id, "page": 1, "page_size": 10000}, headers=headers, timeout=15)
                 ticket_data = ticket_resp.json()
                 
                 res = {}
