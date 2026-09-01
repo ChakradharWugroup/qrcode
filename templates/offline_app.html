@@ -142,9 +142,18 @@
         <div class="bg-white p-4 rounded-lg shadow">
             <h2 class="text-lg font-bold mb-2 border-b pb-1" data-i18n="review_add">2. Review & Add</h2>
             <div class="space-y-4">
-                <div>
+                                <div>
                     <label class="block text-sm font-medium text-gray-700" data-i18n="scanned_qr_data">Scanned QR Data (TID)</label>
-                    <input type="text" id="input-qr" class="mt-1 w-full border border-gray-300 rounded px-3 py-2 bg-gray-50" placeholder="Scan above or type here..." data-i18n-placeholder="scan_placeholder">
+                    <input type="text" id="input-qr" oninput="lookupAndDisplayMasterData()" class="mt-1 w-full border border-gray-300 rounded px-3 py-2 bg-gray-50" placeholder="Scan above or type here..." data-i18n-placeholder="scan_placeholder">
+                </div>
+                
+                <!-- NEW: Master Data Display -->
+                <div id="master-data-info" class="hidden bg-indigo-50 border border-indigo-200 p-3 rounded-lg shadow-inner">
+                    <div class="grid grid-cols-3 gap-2 text-sm">
+                        <div><span class="text-gray-500 text-xs block">Style</span><strong id="info-style" class="text-indigo-800"></strong></div>
+                        <div><span class="text-gray-500 text-xs block">Color</span><strong id="info-color" class="text-indigo-800"></strong></div>
+                        <div><span class="text-gray-500 text-xs block">Size</span><strong id="info-size" class="text-indigo-800"></strong></div>
+                    </div>
                 </div>
                 <div>
                     <label class="block text-sm font-bold text-blue-700" data-i18n="quantity">Quantity</label>
@@ -508,7 +517,11 @@
 
             boxItems.forEach(item => {
                 totalQty += parseInt(item.qty, 10) || 0;
-                itemList += `${item.qr} : ${item.qty}\n`;
+                if (item.tid && item.style !== "-") {
+                    itemList += `TID:${item.tid} | ${item.color} | ${item.size} => Qty: ${item.qty}\n`;
+                } else {
+                    itemList += `${item.qr} => Qty: ${item.qty}\n`;
+                }
             });
 
             let qrText = `Box: ${currentBox}\nUnique TIDs: ${boxItems.length}\nTotal Qty: ${totalQty}\n---\n${itemList}`;
@@ -632,6 +645,47 @@
             });
         }
 
+        
+        function extractTid(qrText) {
+            let match = qrText.match(/tid=(\d+)/i);
+            if (match) return match[1];
+            // If it's just numbers, assume it is the TID
+            if (/^\d+$/.test(qrText.trim())) return qrText.trim();
+            return null;
+        }
+
+        function lookupAndDisplayMasterData() {
+            const qrText = document.getElementById('input-qr').value.trim();
+            const infoDiv = document.getElementById('master-data-info');
+            const tid = extractTid(qrText);
+            
+            if (!tid) {
+                infoDiv.classList.add('hidden');
+                return;
+            }
+            
+            try {
+                const masterDataStr = localStorage.getItem('master_tickets');
+                if (masterDataStr) {
+                    const masterData = JSON.parse(masterDataStr);
+                    const t = masterData[tid];
+                    if (t) {
+                        document.getElementById('info-style').innerText = t.style || '-';
+                        document.getElementById('info-color').innerText = t.color || '-';
+                        document.getElementById('info-size').innerText = t.size || '-';
+                        infoDiv.classList.remove('hidden');
+                        
+                        // Auto-fill quantity if it's empty or hasn't been modified yet
+                        document.getElementById('input-quantity').value = t.quantity || '';
+                        return;
+                    }
+                }
+            } catch(e) { console.error(e); }
+            
+            // Not found
+            infoDiv.classList.add('hidden');
+        }
+
         function saveItem() {
             const qr = document.getElementById('input-qr').value.trim();
             const qty = document.getElementById('input-quantity').value.trim();
@@ -647,16 +701,22 @@
                 return;
             }
             
-            // Look up master data for details
+            let styleStr = "-";
+            let colorStr = "-";
+            let sizeStr = "-";
             let extraDetails = "";
-            let match = qr.match(/tid=(\d+)/);
-            if (match) {
+            
+            const tid = extractTid(qr);
+            if (tid) {
                 try {
                     const masterDataStr = localStorage.getItem('master_tickets');
                     if (masterDataStr) {
                         const masterData = JSON.parse(masterDataStr);
-                        if (masterData[match[1]]) {
-                            const t = masterData[match[1]];
+                        if (masterData[tid]) {
+                            const t = masterData[tid];
+                            styleStr = t.style || "-";
+                            colorStr = t.color || "-";
+                            sizeStr = t.size || "-";
                             extraDetails = `<br/><span class="text-xs text-purple-600 font-bold">${t.color} | ${t.size}</span><br/><span class="text-xs text-gray-500">${t.style}</span>`;
                         }
                     }
@@ -667,7 +727,11 @@
                 id: Date.now(),
                 box: currentBox,
                 qr: qr,
+                tid: tid,
                 qty: qty,
+                style: styleStr,
+                color: colorStr,
+                size: sizeStr,
                 extraDetails: extraDetails,
                 timestamp: new Date().toLocaleString(),
                 synced: false
