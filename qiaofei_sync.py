@@ -2,7 +2,7 @@ from fastapi import APIRouter, Request, BackgroundTasks
 from fastapi.responses import JSONResponse
 import requests
 import hashlib
-from database import get_db, QRCodeData
+
 import traceback
 
 router = APIRouter()
