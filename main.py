@@ -13,6 +13,7 @@ from pyzbar.pyzbar import decode
 # AI OCR Disabled per user request
 # from rapidocr_onnxruntime import RapidOCR
 import os
+from qiaofei_sync import router as qiaofei_router
 
 import models, schemas
 from database import engine, get_db
@@ -20,6 +21,7 @@ from database import engine, get_db
 models.Base.metadata.create_all(bind=engine)
 
 app = FastAPI(title="Master QR Manager")
+app.include_router(qiaofei_router)
 
 from fastapi.staticfiles import StaticFiles
 
