@@ -148,7 +148,7 @@
                 </div>
                 
                 <!-- NEW: Master Data Display -->
-                <div id="master-data-info" class="hidden bg-indigo-50 border border-indigo-200 p-3 rounded-lg shadow-inner">
+                <div id="master-data-info" class="bg-indigo-50 border border-indigo-200 p-3 rounded-lg shadow-inner">
                     <div class="grid grid-cols-3 gap-2 text-sm">
                         <div><span class="text-gray-500 text-xs block">Style</span><strong id="info-style" class="text-indigo-800"></strong></div>
                         <div><span class="text-gray-500 text-xs block">Color</span><strong id="info-color" class="text-indigo-800"></strong></div>
@@ -656,34 +656,29 @@
 
         function lookupAndDisplayMasterData() {
             const qrText = document.getElementById('input-qr').value.trim();
-            const infoDiv = document.getElementById('master-data-info');
             const tid = extractTid(qrText);
             
-            if (!tid) {
-                infoDiv.classList.add('hidden');
-                return;
+            let s = '-', c = '-', z = '-';
+            
+            if (tid) {
+                try {
+                    const masterDataStr = localStorage.getItem('master_tickets');
+                    if (masterDataStr) {
+                        const masterData = JSON.parse(masterDataStr);
+                        const t = masterData[tid];
+                        if (t) {
+                            s = t.style || '-';
+                            c = t.color || '-';
+                            z = t.size || '-';
+                            document.getElementById('input-quantity').value = t.quantity || '';
+                        }
+                    }
+                } catch(e) { console.error(e); }
             }
             
-            try {
-                const masterDataStr = localStorage.getItem('master_tickets');
-                if (masterDataStr) {
-                    const masterData = JSON.parse(masterDataStr);
-                    const t = masterData[tid];
-                    if (t) {
-                        document.getElementById('info-style').innerText = t.style || '-';
-                        document.getElementById('info-color').innerText = t.color || '-';
-                        document.getElementById('info-size').innerText = t.size || '-';
-                        infoDiv.classList.remove('hidden');
-                        
-                        // Auto-fill quantity if it's empty or hasn't been modified yet
-                        document.getElementById('input-quantity').value = t.quantity || '';
-                        return;
-                    }
-                }
-            } catch(e) { console.error(e); }
-            
-            // Not found
-            infoDiv.classList.add('hidden');
+            document.getElementById('info-style').innerText = s;
+            document.getElementById('info-color').innerText = c;
+            document.getElementById('info-size').innerText = z;
         }
 
         function saveItem() {
@@ -742,6 +737,7 @@
             
             document.getElementById('input-qr').value = '';
             document.getElementById('input-quantity').value = '';
+            lookupAndDisplayMasterData(); // Reset the labels
             
             renderTable();
         }
