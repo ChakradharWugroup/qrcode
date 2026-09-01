@@ -504,7 +504,7 @@
                         alert("Error: " + data.error);
                     }
                 } else {
-                    alert("Failed to connect to server for sync.");
+                    const errText = await response.text(); alert("Server Error " + response.status + ": " + errText);
                 }
             } catch (err) {
                 alert("Network error: " + err.message);
