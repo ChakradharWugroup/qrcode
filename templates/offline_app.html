@@ -56,7 +56,18 @@
             <span data-i18n="sync_qiaofei">Sync Qiaofei Data</span>
         </button>
 
-        
+        <div id="sync-data-summary" class="bg-indigo-50 border border-indigo-200 rounded-lg p-3 hidden">
+            <div class="flex justify-between items-center cursor-pointer" onclick="document.getElementById('sync-details').classList.toggle('hidden')">
+                <div class="flex items-center space-x-2">
+                    <svg class="w-5 h-5 text-indigo-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>
+                    <span class="text-sm font-bold text-indigo-800" id="sync-summary-text">0 tickets loaded</span>
+                </div>
+                <span class="text-xs text-indigo-600 underline font-semibold">View Stats</span>
+            </div>
+            <div id="sync-details" class="mt-3 text-xs text-gray-700 hidden max-h-40 overflow-y-auto border-t border-indigo-100 pt-2">
+            </div>
+        </div>
+
         <div class="bg-white p-6 rounded-lg shadow-md">
             <h2 class="text-lg font-bold mb-2 text-gray-800 border-b pb-2" data-i18n="your_boxes">Your Boxes</h2>
             <div id="dashboard-box-list" class="space-y-2 mt-3 max-h-64 overflow-y-auto pr-2">
@@ -333,6 +344,45 @@
         let lastCurrentBox = localStorage.getItem('current_box') || '';
         updateDashboardStats();
 
+
+        function updateSyncSummary() {
+            try {
+                const data = localStorage.getItem('master_tickets');
+                const summaryDiv = document.getElementById('sync-data-summary');
+                if (!data) {
+                    summaryDiv.classList.add('hidden');
+                    return;
+                }
+                const tickets = JSON.parse(data);
+                const keys = Object.keys(tickets);
+                if (keys.length === 0) {
+                    summaryDiv.classList.add('hidden');
+                    return;
+                }
+                
+                summaryDiv.classList.remove('hidden');
+                document.getElementById('sync-summary-text').innerText = `${keys.length} Master Tickets Ready`;
+                
+                // Group by style
+                const styles = {};
+                keys.forEach(k => {
+                    const style = tickets[k].style || 'Unknown Style';
+                    styles[style] = (styles[style] || 0) + 1;
+                });
+                
+                let detailsHtml = '<ul class="space-y-1">';
+                for(const [style, count] of Object.entries(styles)) {
+                    detailsHtml += `<li class="flex justify-between border-b border-gray-100 pb-1"><strong>${style}</strong> <span class="text-indigo-600 font-bold">${count} pcs</span></li>`;
+                }
+                detailsHtml += '</ul>';
+                
+                document.getElementById('sync-details').innerHTML = detailsHtml;
+                
+            } catch(e) {
+                console.error(e);
+            }
+        }
+
         function updateDashboardStats() {
             document.getElementById('total-scans-badge').innerText = localDB.length;
             
@@ -499,6 +549,7 @@
                     const data = await response.json();
                     if (data.success) {
                         localStorage.setItem('master_tickets', JSON.stringify(data.tickets));
+                        updateSyncSummary();
                         alert(`Successfully synced ${data.total_tickets} tickets from Qiaofei!`);
                     } else {
                         alert("Error: " + data.error);
@@ -746,6 +797,7 @@
             ind.classList.replace('bg-green-500', 'bg-yellow-500');
         }
         
+        updateSyncSummary();
         // Apply language on startup
         setLanguage(currentLang);
 
