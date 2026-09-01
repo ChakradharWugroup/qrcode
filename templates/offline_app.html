@@ -516,7 +516,7 @@
         });
 
         // --- Start New Box Logic ---
-        document.getElementById('start-new-box').addEventListener('click', () => {
+        function startScanner() {
             document.getElementById('start-scan-btn').style.display = 'none';
             html5QrcodeScanner = new Html5Qrcode("reader");
             
