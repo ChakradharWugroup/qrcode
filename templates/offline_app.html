@@ -572,7 +572,8 @@
             btn.disabled = true;
             
             try {
-                const response = await fetch('/api/sync_qiaofei', {
+                            const limitVal = document.getElementById('sync-limit') ? document.getElementById('sync-limit').value : 500;
+            const response = await fetch(`/api/sync_qiaofei?limit=${limitVal}`, {
                     method: 'POST',
                 });
                 
