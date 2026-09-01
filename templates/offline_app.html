@@ -11,6 +11,36 @@
     <meta name="theme-color" content="#2563eb">
     <link rel="apple-touch-icon" href="/static/icon.png">
     <script>
+
+        // IndexedDB wrapper for unlimited Master Data storage
+        const dbPromise = new Promise((resolve, reject) => {
+            const request = indexedDB.open('OfflineQR_DB', 1);
+            request.onupgradeneeded = (e) => {
+                e.target.result.createObjectStore('store');
+            };
+            request.onsuccess = (e) => resolve(e.target.result);
+            request.onerror = (e) => reject(e);
+        });
+
+        async function saveMasterData(data) {
+            const db = await dbPromise;
+            return new Promise((resolve) => {
+                const tx = db.transaction('store', 'readwrite');
+                tx.objectStore('store').put(data, 'master_tickets');
+                tx.oncomplete = resolve;
+            });
+        }
+
+        async function getMasterData() {
+            const db = await dbPromise;
+            return new Promise((resolve) => {
+                const tx = db.transaction('store', 'readonly');
+                const req = tx.objectStore('store').get('master_tickets');
+                req.onsuccess = () => resolve(req.result);
+                req.onerror = () => resolve(null);
+            });
+        }
+
       if ('serviceWorker' in navigator) {
         navigator.serviceWorker.register('/static/sw.js');
       }
@@ -229,6 +259,36 @@
     </div>
 
     <script>
+
+        // IndexedDB wrapper for unlimited Master Data storage
+        const dbPromise = new Promise((resolve, reject) => {
+            const request = indexedDB.open('OfflineQR_DB', 1);
+            request.onupgradeneeded = (e) => {
+                e.target.result.createObjectStore('store');
+            };
+            request.onsuccess = (e) => resolve(e.target.result);
+            request.onerror = (e) => reject(e);
+        });
+
+        async function saveMasterData(data) {
+            const db = await dbPromise;
+            return new Promise((resolve) => {
+                const tx = db.transaction('store', 'readwrite');
+                tx.objectStore('store').put(data, 'master_tickets');
+                tx.oncomplete = resolve;
+            });
+        }
+
+        async function getMasterData() {
+            const db = await dbPromise;
+            return new Promise((resolve) => {
+                const tx = db.transaction('store', 'readonly');
+                const req = tx.objectStore('store').get('master_tickets');
+                req.onsuccess = () => resolve(req.result);
+                req.onerror = () => resolve(null);
+            });
+        }
+
         let html5QrcodeScanner = null;
         let currentBox = "";
 
