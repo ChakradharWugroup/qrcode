@@ -388,57 +388,47 @@
         updateDashboardStats();
 
 
-        function updateSyncSummary() {
+        async function updateSyncSummary() {
             try {
-                const data = localStorage.getItem('master_tickets');
-                const summaryDiv = document.getElementById('sync-data-summary');
-                if (!data) {
-                    summaryDiv.classList.add('hidden');
-                    return;
-                }
-                const tickets = JSON.parse(data);
-                const keys = Object.keys(tickets);
-                if (keys.length === 0) {
-                    summaryDiv.classList.add('hidden');
-                    return;
+                let masterData = await getMasterData();
+                if (!masterData) {
+                    const lsData = localStorage.getItem('master_tickets');
+                    if (lsData) masterData = JSON.parse(lsData);
                 }
                 
-                summaryDiv.classList.remove('hidden');
-                document.getElementById('sync-summary-text').innerText = `${keys.length} Master Tickets Ready`;
-                
-                let detailsHtml = `
-                    <div class="overflow-x-auto pb-2">
-                        <table class="w-full text-left border-collapse mt-1 whitespace-nowrap">
-                            <thead>
-                                <tr class="bg-indigo-100 text-indigo-800 sticky top-0 shadow-sm">
-                                    <th class="p-1.5 border border-indigo-200">TID</th>
-                                    <th class="p-1.5 border border-indigo-200">Style</th>
-                                    <th class="p-1.5 border border-indigo-200">Color</th>
-                                    <th class="p-1.5 border border-indigo-200">Size</th>
-                                    <th class="p-1.5 border border-indigo-200">Qty</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                `;
-                
-                // Add rows
-                keys.forEach(tid => {
-                    const t = tickets[tid];
-                    detailsHtml += `
-                        <tr class="border-b border-gray-200 hover:bg-gray-50">
-                            <td class="p-1 border border-gray-200 text-indigo-600 font-mono">${tid}</td>
-                            <td class="p-1 border border-gray-200 max-w-[120px] truncate" title="${t.style || '-'}">${t.style || '-'}</td>
-                            <td class="p-1 border border-gray-200">${t.color || '-'}</td>
-                            <td class="p-1 border border-gray-200">${t.size || '-'}</td>
-                            <td class="p-1 border border-gray-200 font-bold">${t.quantity || '-'}</td>
-                        </tr>
-                    `;
-                });
-                
-                detailsHtml += '</tbody></table></div>';
-                
-                document.getElementById('sync-details').innerHTML = detailsHtml;
-                
+                if (masterData) {
+                    const keys = Object.keys(masterData);
+                    const summaryDiv = document.getElementById('sync-data-summary');
+                    
+                    if (keys.length > 0) {
+                        summaryDiv.classList.remove('hidden');
+                        document.getElementById('sync-summary-text').innerText = `${keys.length} Master Tickets Ready`;
+                        
+                        let detailsHtml = '<div class="overflow-x-auto"><table class="w-full text-left border-collapse"><thead><tr class="bg-indigo-100"><th class="p-1 border-b">TID</th><th class="p-1 border-b">Style</th><th class="p-1 border-b">Color</th><th class="p-1 border-b">Size</th><th class="p-1 border-b">Qty</th></tr></thead><tbody>';
+                        
+                        // Only show first 100 to prevent lagging the UI
+                        const previewKeys = keys.slice(0, 100);
+                        previewKeys.forEach(k => {
+                            const t = masterData[k];
+                            detailsHtml += `<tr>
+                                <td class="p-1 border-b font-mono">${k}</td>
+                                <td class="p-1 border-b truncate max-w-[80px]">${t.style || '-'}</td>
+                                <td class="p-1 border-b">${t.color || '-'}</td>
+                                <td class="p-1 border-b">${t.size || '-'}</td>
+                                <td class="p-1 border-b font-bold">${t.quantity || '-'}</td>
+                            </tr>`;
+                        });
+                        
+                        if (keys.length > 100) {
+                            detailsHtml += `<tr><td colspan="5" class="p-2 text-center text-gray-500 italic">...and ${keys.length - 100} more tickets hidden</td></tr>`;
+                        }
+                        
+                        detailsHtml += '</tbody></table></div>';
+                        document.getElementById('sync-details').innerHTML = detailsHtml;
+                    } else {
+                        summaryDiv.classList.add('hidden');
+                    }
+                }
             } catch(e) {
                 console.error(e);
             }
@@ -614,7 +604,13 @@
                 if (response.ok) {
                     const data = await response.json();
                     if (data.success) {
-                        localStorage.setItem('master_tickets', JSON.stringify(data.tickets));
+                        
+                    // Save to IndexedDB to bypass the 5MB browser limit
+                    await saveMasterData(data.tickets);
+                    
+                    // Clear the old localStorage to free up space
+                    localStorage.removeItem('master_tickets');
+
                         updateSyncSummary();
                         alert(`Successfully synced ${data.total_tickets} tickets from Qiaofei!`);
                     } else {
@@ -689,7 +685,7 @@
             return null;
         }
 
-        function lookupAndDisplayMasterData() {
+        async function lookupAndDisplayMasterData() {
             const qrText = document.getElementById('input-qr').value.trim();
             const tid = extractTid(qrText);
             
@@ -704,9 +700,16 @@
             
             if (tid) {
                 try {
-                    const masterDataStr = localStorage.getItem('master_tickets');
-                    if (masterDataStr) {
-                        const masterData = JSON.parse(masterDataStr);
+                    // Try IndexedDB first
+                    let masterData = await getMasterData();
+                    
+                    // Fallback to localStorage if not found in IndexedDB (for backwards compatibility)
+                    if (!masterData) {
+                        const lsData = localStorage.getItem('master_tickets');
+                        if (lsData) masterData = JSON.parse(lsData);
+                    }
+                    
+                    if (masterData) {
                         const t = masterData[tid];
                         if (t) {
                             document.getElementById('input-company').value = t.company || '';
@@ -718,7 +721,7 @@
                             document.getElementById('input-quantity').value = t.quantity || '';
                         }
                     }
-                } catch(e) { console.error(e); }
+                } catch(e) { console.error("Error looking up master data:", e); }
             }
         }
 
