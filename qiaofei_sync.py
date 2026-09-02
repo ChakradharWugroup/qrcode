@@ -24,7 +24,7 @@ async def sync_qiaofei(request: Request, timeframe: str = 'month'):
             "area_code": "886"
         }
         
-        login_resp = session.post("https://saofeiapi.huole.cn/common/login/login", json=login_payload, headers=headers)
+        login_resp = session.post("https://dark-lab-2998.kallec.workers.dev/common/login/login", json=login_payload, headers=headers)
         login_data = login_resp.json()
         
         if str(login_data.get('code')) not in ['1', '200']:
@@ -56,7 +56,7 @@ async def sync_qiaofei(request: Request, timeframe: str = 'month'):
         target_date_str = target_date.strftime("%Y-%m-%d")
 
         # 3. Fetch the Production Orders List
-        list_url = "https://saofeiapi.huole.cn/common/cut_order/get_product_list"
+        list_url = "https://dark-lab-2998.kallec.workers.dev/common/cut_order/get_product_list"
         list_resp = session.post(list_url, params=params, json={"page": 1, "page_size": 2000}, headers=headers)
         list_data = list_resp.json()
         
@@ -93,7 +93,7 @@ async def sync_qiaofei(request: Request, timeframe: str = 'month'):
             if not cut_order_id:
                 return {}
                 
-            ticket_url = "https://saofeiapi.huole.cn/common/cut_order/get_cut_order_ticket_list"
+            ticket_url = "https://dark-lab-2998.kallec.workers.dev/common/cut_order/get_cut_order_ticket_list"
             try:
                 ticket_resp = requests.post(ticket_url, params=params, json={"cut_order_id": cut_order_id, "page": 1, "page_size": 10000}, headers=headers, timeout=10)
                 ticket_data = ticket_resp.json()
