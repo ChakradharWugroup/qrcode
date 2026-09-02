@@ -395,12 +395,19 @@ from pydantic import BaseModel
 from typing import List
 import uuid
 
+from typing import Optional
 class SyncItem(BaseModel):
     id: int
     box: str
     qr: str
     qty: int
     timestamp: str
+    company: Optional[str] = None
+    style: Optional[str] = None
+    bed: Optional[str] = None
+    bundle: Optional[str] = None
+    color: Optional[str] = None
+    size: Optional[str] = None
 
 import traceback
 
@@ -426,7 +433,13 @@ def sync_offline_data(items: List[SyncItem], db: Session = Depends(get_db)):
                 new_item = models.GarmentQRCode(
                     collection_id=collection.id,
                     qr_data=item.qr,
-                    quantity=item.qty
+                    quantity=item.qty,
+                    company_name=item.company,
+                    style_no=item.style,
+                    bed_no=item.bed,
+                    bundle_no=item.bundle,
+                    color=item.color,
+                    size=item.size
                 )
                 db.add(new_item)
         db.commit()
