@@ -113,13 +113,19 @@
             <h2 class="text-lg font-bold mb-2 text-gray-800 border-b pb-2" data-i18n="global_history">Global Scan History</h2>
             <div class="overflow-x-auto max-h-96 overflow-y-auto mt-4">
                 <table class="w-full text-left text-sm whitespace-nowrap">
-                    <thead>
-                        <tr class="bg-gray-200">
-                            <th class="p-2 border" data-i18n="col_box">Box</th>
-                            <th class="p-2 border" data-i18n="col_qr">QR Data</th>
-                            <th class="p-2 border" data-i18n="col_qty">Qty</th>
-                            <th class="p-2 border" data-i18n="col_time">Time</th>
-                            <th class="p-2 border" data-i18n="col_status">Status</th>
+                    <thead class="sticky top-0">
+                        <tr class="bg-gray-200 text-xs font-bold">
+                            <th class="p-2 border whitespace-nowrap">Box</th>
+                            <th class="p-2 border whitespace-nowrap">TID</th>
+                            <th class="p-2 border whitespace-nowrap">Company</th>
+                            <th class="p-2 border whitespace-nowrap">Style</th>
+                            <th class="p-2 border whitespace-nowrap">Bed</th>
+                            <th class="p-2 border whitespace-nowrap">Bundle</th>
+                            <th class="p-2 border whitespace-nowrap">Color</th>
+                            <th class="p-2 border whitespace-nowrap">Size</th>
+                            <th class="p-2 border whitespace-nowrap">Qty</th>
+                            <th class="p-2 border whitespace-nowrap">Time</th>
+                            <th class="p-2 border whitespace-nowrap">Status</th>
                         </tr>
                     </thead>
                     <tbody id="global-history-body">
@@ -538,11 +544,18 @@ try {
                         : `<span class="text-yellow-600 font-bold">${i18n[currentLang]["pending"]}</span>`;
                     
                     const tr = document.createElement('tr');
+                    tr.className = 'text-xs hover:bg-gray-50';
                     tr.innerHTML = `
-                        <td class="p-2 border font-bold text-gray-700">${item.box}</td>
-                        <td class="p-2 border text-blue-600 font-mono text-xs">${item.qr}</td>
+                        <td class="p-2 border font-bold text-gray-700 whitespace-nowrap">${item.box}</td>
+                        <td class="p-2 border text-blue-600 font-mono">${item.tid || item.qr}</td>
+                        <td class="p-2 border text-gray-700">${item.company || '-'}</td>
+                        <td class="p-2 border text-gray-700">${item.style || '-'}</td>
+                        <td class="p-2 border text-gray-700">${item.bed || '-'}</td>
+                        <td class="p-2 border text-gray-700">${item.bundle || '-'}</td>
+                        <td class="p-2 border text-gray-700">${item.color || '-'}</td>
+                        <td class="p-2 border text-gray-700">${item.size || '-'}</td>
                         <td class="p-2 border font-bold text-green-600">${item.qty}</td>
-                        <td class="p-2 border text-xs text-gray-500">${item.timestamp}</td>
+                        <td class="p-2 border text-gray-500 whitespace-nowrap">${item.timestamp}</td>
                         <td class="p-2 border text-xs text-center">${statusHtml}</td>
                     `;
                     tbody.appendChild(tr);
