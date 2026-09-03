@@ -303,7 +303,7 @@
                   view_data: 'View Data',
                   tickets_ready: 'Tickets Downloaded',
                   zero_tickets: '0 tickets loaded',
-                  cut_order_prefix: 'Cut Order',
+                  cut_order_prefix: 'Box',
 
                 ready: 'Ready',
                 start_new_box: 'New Box',
@@ -356,7 +356,7 @@
                   view_data: '查看数据',
                   tickets_ready: '菲票已下载',
                   zero_tickets: '0 张菲票',
-                  cut_order_prefix: '裁床单',
+                  cut_order_prefix: '箱子',
 
                 ready: '就绪',
                 start_new_box: '新箱子',
@@ -409,7 +409,7 @@
                   view_data: '查看數據',
                   tickets_ready: '菲票已下載',
                   zero_tickets: '0 張菲票',
-                  cut_order_prefix: '裁床單',
+                  cut_order_prefix: '箱子',
 
                 ready: '就緒',
                 start_new_box: '新箱子',
@@ -624,7 +624,7 @@ try {
             let maxSeq = 0;
             existingBoxes.forEach(b => {
                 if (b.includes(today)) {
-                    const match = b.match(/Box (\d+)/);
+                    const prefix = i18n[currentLang]["cut_order_prefix"] || "Box"; const match = b.match(new RegExp(prefix.replace(/[.*+?^${}()|[\]\\]/g, "\\$&") + " (\\d+)"));
                     if (match && match[1]) {
                         const num = parseInt(match[1]);
                         if (num > maxSeq) maxSeq = num;
