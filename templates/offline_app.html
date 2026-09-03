@@ -55,13 +55,13 @@
         <div class="flex space-x-2 w-full">
             <div class="w-1/3 relative" title="Time range of orders to fetch">
                 <select id="sync-timeframe" class="w-full pl-2 pr-2 py-4 border-2 border-indigo-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 font-bold text-indigo-800 text-center text-sm appearance-none bg-white">
-                    <option value="today">Today</option>
-                    <option value="yesterday">Yesterday</option>
-                    <option value="week">This Week</option>
-                    <option value="month" selected>This Month</option>
-                    <option value="3months">Last 3 Months</option>
+                    <option value="today" data-i18n="time_today">Today</option>
+                    <option value="yesterday" data-i18n="time_yesterday">Yesterday</option>
+                    <option value="week" data-i18n="time_week">This Week</option>
+                    <option value="month" selected data-i18n="time_month">This Month</option>
+                    <option value="3months" data-i18n="time_3months">Last 3 Months</option>
                 </select>
-                <div class="absolute text-[10px] text-indigo-500 top-1 left-2 font-semibold pointer-events-none">Time Range</div>
+                <div class="absolute text-[10px] text-indigo-500 top-1 left-2 font-semibold pointer-events-none" data-i18n="time_range">Time Range</div>
                 <div class="absolute right-2 top-5 text-indigo-500 pointer-events-none">
                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
                 </div>
@@ -76,9 +76,9 @@
             <div class="flex justify-between items-center cursor-pointer" onclick="document.getElementById('sync-details').classList.toggle('hidden')">
                 <div class="flex items-center space-x-2">
                     <svg class="w-5 h-5 text-indigo-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>
-                    <span class="text-sm font-bold text-indigo-800" id="sync-summary-text">0 tickets loaded</span>
+                    <span class="text-sm font-bold text-indigo-800" id="sync-summary-text"><span data-i18n="zero_tickets">0 tickets loaded</span></span>
                 </div>
-                <span class="text-xs text-indigo-600 underline font-semibold">View Data</span>
+                <span class="text-xs text-indigo-600 underline font-semibold" data-i18n="view_data">View Data</span>
             </div>
             <div id="sync-details" class="mt-3 text-xs text-gray-700 hidden max-h-64 overflow-y-auto border-t border-indigo-200 pt-2">
             </div>
@@ -156,7 +156,7 @@
             <div id="reader" class="w-full bg-black rounded overflow-hidden"></div>
             <button id="start-scan-btn" onclick="startScanner()" class="mt-4 w-full bg-blue-600 text-white py-3 rounded font-bold flex justify-center items-center">
                 <svg class="w-6 h-6 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"></path></svg>
-                Open Camera
+                <span data-i18n="open_camera">Open Camera</span>
             </button>
         </div>
 
@@ -290,6 +290,17 @@
         const i18n = {
             'en': {
                 title: '100% Offline QR App',
+                  time_today: 'Today',
+                  time_yesterday: 'Yesterday',
+                  time_week: 'This Week',
+                  time_month: 'This Month',
+                  time_3months: 'Last 3 Months',
+                  time_range: 'Time Range',
+                  view_data: 'View Data',
+                  tickets_ready: 'Master Tickets Ready',
+                  zero_tickets: '0 tickets loaded',
+                  cut_order_prefix: 'Cut Order',
+
                 ready: 'Ready',
                 start_new_box: 'Start New Cut Order',
                 sync_qiaofei: 'Sync Qiaofei Data',
@@ -329,9 +340,20 @@
             },
             'zh-CN': {
                 title: '100% 离线扫码应用',
+                  time_today: '今天',
+                  time_yesterday: '昨天',
+                  time_week: '本周',
+                  time_month: '本月',
+                  time_3months: '最近3个月',
+                  time_range: '时间范围',
+                  view_data: '查看数据',
+                  tickets_ready: '张菲票已就绪',
+                  zero_tickets: '0 张菲票',
+                  cut_order_prefix: '裁床单',
+
                 ready: '就绪',
-                start_new_box: '开始新箱子',
-                sync_qiaofei: '开始新箱子',
+                start_new_box: '同步 ERP 数据',
+                sync_qiaofei: '同步 ERP 数据',
                 your_boxes: '您的箱子',
                 database_options: '数据库选项',
                 total_scans: '工厂总扫描量: ',
@@ -368,9 +390,20 @@
             },
             'zh-TW': {
                 title: '100% 離線掃碼應用',
+                  time_today: '今天',
+                  time_yesterday: '昨天',
+                  time_week: '本週',
+                  time_month: '本月',
+                  time_3months: '最近3個月',
+                  time_range: '時間範圍',
+                  view_data: '查看數據',
+                  tickets_ready: '張菲票已就緒',
+                  zero_tickets: '0 張菲票',
+                  cut_order_prefix: '裁床單',
+
                 ready: '就緒',
-                start_new_box: '開始新箱子',
-                sync_qiaofei: '開始新箱子',
+                start_new_box: '同步 ERP 數據',
+                sync_qiaofei: '同步 ERP 數據',
                 your_boxes: '您的箱子',
                 database_options: '資料庫選項',
                 total_scans: '工廠總掃描量: ',
@@ -465,7 +498,7 @@ try {
                     
                     if (keys.length > 0) {
                         summaryDiv.classList.remove('hidden');
-                        document.getElementById('sync-summary-text').innerText = `${keys.length} Master Tickets Ready`;
+                        document.getElementById('sync-summary-text').innerText = `${keys.length} ${i18n[currentLang]["tickets_ready"]}`;
                         
                         let detailsHtml = '<div class="overflow-x-auto"><table class="w-full text-left border-collapse"><thead><tr class="bg-indigo-100"><th class="p-1 border-b">TID</th><th class="p-1 border-b">Style</th><th class="p-1 border-b">Color</th><th class="p-1 border-b">Size</th><th class="p-1 border-b">Qty</th></tr></thead><tbody>';
                         
@@ -526,7 +559,7 @@ try {
                         <p class="text-xs text-gray-600">${count} <span data-i18n="items_scanned"></span></p>
                     </div>
                     <button onclick="resumeBox('${box}')" class="bg-blue-100 text-blue-700 px-4 py-2 rounded text-sm font-bold border border-blue-300 hover:bg-blue-200">
-                        Open
+                        ${i18n[currentLang]["open_btn"]}
                     </button>
                 `;
                 listContainer.appendChild(div);
@@ -580,7 +613,7 @@ try {
             });
             
             const nextSeq = maxSeq + 1;
-            const newBoxName = `Cut Order ${nextSeq} - ${today}`;
+            const newBoxName = `${i18n[currentLang]["cut_order_prefix"]} ${nextSeq} - ${today}`;
             
             resumeBox(newBoxName);
         }
