@@ -117,9 +117,9 @@
                         <tr class="bg-gray-200 text-xs font-bold">
                             <th class="p-2 border whitespace-nowrap">Box</th>
                             <th class="p-2 border whitespace-nowrap">TID</th>
-                            <th class="p-2 border whitespace-nowrap">Company</th>
+                            <th class="p-2 border whitespace-nowrap">Customer</th>
                             <th class="p-2 border whitespace-nowrap">Style</th>
-                            <th class="p-2 border whitespace-nowrap">Bed</th>
+                            <th class="p-2 border whitespace-nowrap">Cut No.</th>
                             <th class="p-2 border whitespace-nowrap">Bundle</th>
                             <th class="p-2 border whitespace-nowrap">Color</th>
                             <th class="p-2 border whitespace-nowrap">Size</th>
@@ -146,7 +146,7 @@
         </div>
 
         <div class="bg-blue-50 border border-blue-200 p-4 rounded-lg shadow-sm">
-            <p class="text-gray-700 text-sm" data-i18n="scanning_into">Currently Scanning Into:</p>
+            <p class="text-gray-700 text-sm" data-i18n="scanning_into">Currently Scanning Into Cut Order:</p>
             <p class="text-2xl font-bold text-blue-800" id="display-current-box">Box 1</p>
         </div>
 
@@ -171,7 +171,7 @@
                 
                 <div class="grid grid-cols-2 gap-3">
                     <div>
-                        <label class="block text-[11px] font-bold text-gray-700">Company Name</label>
+                        <label class="block text-[11px] font-bold text-gray-700">Customer</label>
                         <input type="text" id="input-company" class="mt-1 w-full border border-gray-300 rounded px-2 py-2 text-sm">
                     </div>
                     <div>
@@ -179,7 +179,7 @@
                         <input type="text" id="input-style" class="mt-1 w-full border border-gray-300 rounded px-2 py-2 text-sm">
                     </div>
                     <div>
-                        <label class="block text-[11px] font-bold text-gray-700">Bed No (床次)</label>
+                        <label class="block text-[11px] font-bold text-gray-700">Cut No.</label>
                         <input type="text" id="input-bed" class="mt-1 w-full border border-gray-300 rounded px-2 py-2 text-sm">
                     </div>
                     <div>
@@ -291,22 +291,22 @@
             'en': {
                 title: '100% Offline QR App',
                 ready: 'Ready',
-                start_new_box: 'Start New Box',
+                start_new_box: 'Start New Cut Order',
                 sync_qiaofei: 'Sync Qiaofei Data',
-                your_boxes: 'Your Boxes',
+                your_boxes: 'Cut Orders',
                 database_options: 'Database Options',
-                total_scans: 'Total Factory Scans: ',
+                total_scans: 'Total Cut Qty: ',
                 push_cloud: 'Push to Cloud Database',
                 export_csv: 'Export All Data (CSV)',
                 clear_data: 'Clear All Data',
                 global_history: 'Global Scan History',
-                col_box: 'Box',
+                col_box: 'Cut Order',
                 col_qr: 'QR Data',
                 col_qty: 'Qty',
                 col_time: 'Time',
                 col_status: 'Status',
                 col_action: 'Action',
-                back_to_boxes: 'Back to Boxes',
+                back_to_boxes: 'Back to Cut Orders',
                 scanning_into: 'Currently Scanning Into:',
                 live_scanner: '1. Live Scanner',
                 open_camera: 'Open Camera',
@@ -319,13 +319,13 @@
                 save_to_phone: 'SAVE TO PHONE',
                 items_in: 'Items in ',
                 print_qr_code: 'Print QR Code',
-                no_boxes: 'No boxes yet.',
+                no_boxes: 'No cut orders yet.',
                 items_scanned: 'items scanned',
                 open_btn: 'Open',
                 no_items_history: 'No scan history yet.',
                 synced: 'Synced',
                 pending: 'Pending',
-                no_items_box: 'No items in this box yet.'
+                no_items_box: 'No items in this cut order yet.'
             },
             'zh-CN': {
                 title: '100% 离线扫码应用',
@@ -580,7 +580,7 @@ try {
             });
             
             const nextSeq = maxSeq + 1;
-            const newBoxName = `Box ${nextSeq} - ${today}`;
+            const newBoxName = `Cut Order ${nextSeq} - ${today}`;
             
             resumeBox(newBoxName);
         }
@@ -602,7 +602,7 @@ try {
             const boxItems = localDB.filter(item => item.box === currentBox);
             
             if (boxItems.length === 0) {
-                alert("Box is empty! Please scan items first.");
+                alert("Cut Order is empty! Please scan items first.");
                 return;
             }
 
@@ -618,7 +618,7 @@ try {
                 }
             });
 
-            let qrText = `Box: ${currentBox}\nUnique TIDs: ${boxItems.length}\nTotal Qty: ${totalQty}\n---\n${itemList}`;
+            let qrText = `Cut Order: ${currentBox}\nUnique TIDs: ${boxItems.length}\nTotal Qty: ${totalQty}\n---\n${itemList}`;
             
             if (qrText.length > 2000) {
                 qrText = qrText.substring(0, 2000) + "\n...[TRUNCATED]";
@@ -953,7 +953,7 @@ try {
             }
             
             let csvContent = "data:text/csv;charset=utf-8,";
-            csvContent += "Box Name,QR Data (TID),Quantity,Scan Time\n";
+            csvContent += "Cut Order Name,QR Data (TID),Quantity,Scan Time\n";
             
             localDB.forEach(row => {
                 const cleanBox = row.box.replace(/,/g, "");
