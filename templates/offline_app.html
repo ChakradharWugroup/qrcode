@@ -666,22 +666,16 @@ try {
 
         // SPA Navigation
         function createNewBox() {
-            const today = new Date().toLocaleDateString(); 
-            const existingBoxes = [...new Set(localDB.map(item => item.box))];
-            
-            let maxSeq = 0;
-            existingBoxes.forEach(b => {
-                if (b.includes(today)) {
-                    const prefix = i18n[currentLang]["cut_order_prefix"] || "Box"; const match = b.match(new RegExp(prefix.replace(/[.*+?^${}()|[\]\\]/g, "\\$&") + " (\\d+)"));
-                    if (match && match[1]) {
-                        const num = parseInt(match[1]);
-                        if (num > maxSeq) maxSeq = num;
-                    }
-                }
-            });
-            
-            const nextSeq = maxSeq + 1;
-            const newBoxName = `${i18n[currentLang]["cut_order_prefix"]} ${nextSeq} - ${today}`;
+            // Generate unique box ID: YYYYMMDD-HH:MM:SS-XXXX
+            const now = new Date();
+            const year = now.getFullYear();
+            const month = String(now.getMonth() + 1).padStart(2, '0');
+            const day = String(now.getDate()).padStart(2, '0');
+            const hours = String(now.getHours()).padStart(2, '0');
+            const mins = String(now.getMinutes()).padStart(2, '0');
+            const secs = String(now.getSeconds()).padStart(2, '0');
+            const rand = Math.floor(1000 + Math.random() * 9000);
+            const newBoxName = `${year}${month}${day}-${hours}:${mins}:${secs}-${rand}`;
             
             resumeBox(newBoxName);
         }
