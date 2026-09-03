@@ -194,7 +194,11 @@ def export_csv(db: Session = Depends(get_db)):
 
 @app.get("/offline", response_class=HTMLResponse)
 def offline_app(request: Request):
-    return templates.TemplateResponse(request=request, name="offline_app.html", context={"request": request})
+    response = templates.TemplateResponse(request=request, name="offline_app.html", context={"request": request})
+    response.headers["Cache-Control"] = "no-store, no-cache, must-revalidate, max-age=0"
+    response.headers["Pragma"] = "no-cache"
+    response.headers["Expires"] = "0"
+    return response
 
 @app.get("/", response_class=HTMLResponse)
 def dashboard(request: Request, db: Session = Depends(get_db)):
