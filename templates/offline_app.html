@@ -703,7 +703,7 @@ try {
         document.getElementById('sync-master-btn').addEventListener('click', async () => {
             const btn = document.getElementById('sync-master-btn');
             const originalHtml = btn.innerHTML;
-            btn.innerHTML = '<span class="i18n" data-en="Syncing..." data-zh="同步中...">${i18n[currentLang]['downloading'] || 'Downloading...'}</span>';
+            btn.innerHTML = `<span class="i18n" data-en="Downloading..." data-zh="下载中...">${i18n[currentLang]['downloading'] || 'Downloading...'}</span>`;
             btn.disabled = true;
             
             try {
