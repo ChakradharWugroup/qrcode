@@ -290,6 +290,8 @@
         const i18n = {
             'en': {
                 title: '100% Offline QR App',
+                  downloading: 'Downloading...',
+                  clear_warning: 'ERROR! {count} pending tickets have not been uploaded.',
                   time_today: 'Today',
                   time_yesterday: 'Yesterday',
                   time_week: 'This Week',
@@ -297,20 +299,20 @@
                   time_3months: 'Last 3 Months',
                   time_range: 'Time Range',
                   view_data: 'View Data',
-                  tickets_ready: 'Master Tickets Ready',
+                  tickets_ready: 'Tickets Downloaded',
                   zero_tickets: '0 tickets loaded',
                   cut_order_prefix: 'Cut Order',
 
                 ready: 'Ready',
-                start_new_box: 'Start New Cut Order',
-                sync_qiaofei: 'Sync Qiaofei Data',
-                your_boxes: 'Cut Orders',
-                database_options: 'Database Options',
-                total_scans: 'Total Cut Qty: ',
-                push_cloud: 'Push to Cloud Database',
+                start_new_box: '+New Box',
+                sync_qiaofei: 'Download Tickets',
+                your_boxes: 'Box List',
+                database_options: 'Tickets Manage',
+                total_scans: 'Total Tickets: ',
+                push_cloud: 'Upload to Cloud',
                 export_csv: 'Export All Data (CSV)',
-                clear_data: 'Clear All Data',
-                global_history: 'Global Scan History',
+                clear_data: 'Clear Local Tickets',
+                global_history: 'Local Added Tickets',
                 col_box: 'Cut Order',
                 col_qr: 'QR Data',
                 col_qty: 'Qty',
@@ -340,6 +342,9 @@
             },
             'zh-CN': {
                 title: '100% 离线扫码应用',
+                  downloading: '下载中...',
+                  downloading: '下載中...',
+                  clear_warning: '錯誤！{count} 張菲票尚未上傳',
                   time_today: '今天',
                   time_yesterday: '昨天',
                   time_week: '本周',
@@ -347,20 +352,20 @@
                   time_3months: '最近3个月',
                   time_range: '时间范围',
                   view_data: '查看数据',
-                  tickets_ready: '张菲票已就绪',
+                  tickets_ready: '菲票已下载',
                   zero_tickets: '0 张菲票',
                   cut_order_prefix: '裁床单',
 
                 ready: '就绪',
-                start_new_box: '同步 ERP 数据',
-                sync_qiaofei: '同步 ERP 数据',
-                your_boxes: '您的箱子',
-                database_options: '数据库选项',
-                total_scans: '工厂总扫描量: ',
-                push_cloud: '推送至云端数据库',
+                start_new_box: '+新箱子',
+                sync_qiaofei: '下载菲票',
+                your_boxes: '箱子列表',
+                database_options: '菲票管理',
+                total_scans: '菲票数: ',
+                push_cloud: '上传云端',
                 export_csv: '导出所有数据 (CSV)',
-                clear_data: '清除所有数据',
-                global_history: '全局扫描历史',
+                clear_data: '清除本地菲票',
+                global_history: '本地新增菲票',
                 col_box: '箱号',
                 col_qr: '二维码数据',
                 col_qty: '数量',
@@ -390,6 +395,9 @@
             },
             'zh-TW': {
                 title: '100% 離線掃碼應用',
+                  downloading: '下载中...',
+                  downloading: '下載中...',
+                  clear_warning: '錯誤！{count} 張菲票尚未上傳',
                   time_today: '今天',
                   time_yesterday: '昨天',
                   time_week: '本週',
@@ -397,20 +405,20 @@
                   time_3months: '最近3個月',
                   time_range: '時間範圍',
                   view_data: '查看數據',
-                  tickets_ready: '張菲票已就緒',
+                  tickets_ready: '菲票已下載',
                   zero_tickets: '0 張菲票',
                   cut_order_prefix: '裁床單',
 
                 ready: '就緒',
-                start_new_box: '同步 ERP 數據',
-                sync_qiaofei: '同步 ERP 數據',
-                your_boxes: '您的箱子',
-                database_options: '資料庫選項',
-                total_scans: '工廠總掃描量: ',
-                push_cloud: '推送至雲端資料庫',
+                start_new_box: '+新箱子',
+                sync_qiaofei: '下載菲票',
+                your_boxes: '箱子列表',
+                database_options: '菲票管理',
+                total_scans: '菲票數: ',
+                push_cloud: '上傳雲端',
                 export_csv: '匯出所有資料 (CSV)',
-                clear_data: '清除所有資料',
-                global_history: '全局掃描歷史',
+                clear_data: '清除本地菲票',
+                global_history: '本地新增菲票',
                 col_box: '箱號',
                 col_qr: '二維碼資料',
                 col_qty: '數量',
@@ -695,7 +703,7 @@ try {
         document.getElementById('sync-master-btn').addEventListener('click', async () => {
             const btn = document.getElementById('sync-master-btn');
             const originalHtml = btn.innerHTML;
-            btn.innerHTML = '<span class="i18n" data-en="Syncing..." data-zh="同步中...">Syncing...</span>';
+            btn.innerHTML = '<span class="i18n" data-en="Syncing..." data-zh="同步中...">${i18n[currentLang]['downloading'] || 'Downloading...'}</span>';
             btn.disabled = true;
             
             try {
@@ -934,7 +942,7 @@ try {
             try {
                 const btn = document.getElementById('push-btn');
                 const originalText = btn.innerHTML;
-                btn.innerHTML = `<svg class="animate-spin w-5 h-5 mr-2" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path></svg> Syncing...`;
+                btn.innerHTML = `<svg class="animate-spin w-5 h-5 mr-2" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path></svg> ${i18n[currentLang]['downloading'] || 'Downloading...'}`;
                 
                 const response = await fetch('/api/sync', {
                     method: 'POST',
