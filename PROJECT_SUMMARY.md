@@ -1,46 +1,69 @@
 # Project Summary: Master QR Manager (Garment Tracking System)
 
 ## 1. Abstract
-The **Master QR Manager** is a mobile-first, cloud-hosted web application designed to streamline inventory tracking for garment manufacturing factories. It eliminates manual data entry by allowing factory workers to take photos of garment tags directly from their smartphones. Using an AI-powered Optical Character Recognition (OCR) pipeline and dynamic spatial text parsing, the system automatically extracts critical manufacturing metadata (such as Style No, Bed No, Bundle No, Quantity, Color, and Size) alongside decoding any embedded QR data. Finally, it aggregates these individual items into a unified "Collection" and generates a single **Master QR Code** that represents the entire batch, vastly simplifying factory logistics, shipping, and tracking.
+The **Master QR Manager** is a mobile-first, cloud-hosted web application designed to streamline inventory tracking for garment manufacturing factories. It has evolved into a **100% Offline Progressive Web App (PWA)**. Factory workers can synchronize factory batch data in the morning, walk onto a factory floor with zero internet connection, rapidly scan physical QR codes using a highly-optimized in-browser camera scanner, and push the aggregated batch logs back to the cloud at the end of their shift.
 
 ---
 
 ## 2. Technology Stack
 *   **Backend / API:** Python, FastAPI (High-performance asynchronous web framework)
-*   **Frontend:** HTML5, Vanilla JavaScript, Tailwind CSS (Mobile-responsive UI), Jinja2 Templates
-*   **Database:** SQLite via SQLAlchemy ORM (Configured to support seamless migration to PostgreSQL)
-*   **Deployment & DevOps:** Docker, Railway Cloud, GitHub
+*   **Frontend:** HTML5, Vanilla JavaScript, Tailwind CSS (Mobile-responsive UI), Service Workers, IndexedDB (PWA Offline Storage)
+*   **Database:** TiDB Serverless (MySQL-compatible) via SQLAlchemy ORM (Configured with connection pooling & pre-ping to handle serverless timeouts)
+*   **Deployment & DevOps:** Docker (Nixpacks/Dockerfile), Oracle Cloud (Always Free Tier), Coolify (Self-hosted PaaS), `nip.io` Dynamic DNS
+*   **Security & Networking:** Cloudflare Workers (Edge Proxy for Firewall Bypassing)
 
 ---
 
-## 3. AI Models & Computer Vision Used
-The project avoids expensive cloud API calls (like OpenAI or Google Vision) by running highly optimized AI models directly on the server's CPU:
+## 3. Core Architecture & Workflow
 
-1.  **RapidOCR (ONNX Runtime):** 
-    *   *What it is:* A lightweight, highly accurate, open-source OCR engine based on the PaddleOCR architecture. 
-    *   *Why it's used:* It runs on the ONNX runtime (allowing for extremely fast CPU inference) and is specifically trained to accurately read both complex Chinese characters and English alphanumerics simultaneously, which is critical for Chinese factory tags.
-2.  **OpenCV (Open Source Computer Vision Library):** 
-    *   Used for processing the raw image byte streams uploaded from mobile cameras, converting them into multi-dimensional NumPy arrays for the AI to read.
-3.  **PyZbar:** 
-    *   A specialized C-library wrapper used to scan the image for QR code patterns and decode their embedded URLs/data instantly.
+### Phase 1: The Qiaofei Data Sync (Online)
+The factory utilizes an external enterprise ERP system (Qiaofei). To avoid manually entering garment data, the worker presses **"Sync"** while connected to WiFi:
+1. The frontend requests tickets from the FastAPI backend based on a selected timeframe (e.g., "This Month").
+2. The FastAPI backend authenticates with the Qiaofei API. *(Note: Because the Qiaofei API is hosted on Huawei Cloud, which actively blocks Oracle Cloud IPs, the backend traffic is securely routed through a lightweight **Cloudflare Worker Proxy** to successfully bypass the firewall).*
+3. The backend returns a cleaned JSON payload of thousands of tickets.
+4. The frontend utilizes **IndexedDB** to store this massive dataset directly in the smartphone's local memory.
+
+### Phase 2: Factory Floor Scanning (100% Offline)
+Once synchronized, the worker can disconnect from the internet completely.
+1. The frontend utilizes `Html5Qrcode` configured for high-speed mobile scanning (30 FPS, optimized scanning box, native BarcodeDetector API).
+2. When a QR code is scanned, the app extracts the Ticket ID (`tid`).
+3. The app queries the local IndexedDB. If a match is found, it instantly auto-fills all metadata: `Company`, `Style`, `Bed`, `Bundle`, `Color`, `Size`, and `Quantity`.
+4. The scanned records are logged into a local HTML table and saved persistently to IndexedDB so they are not lost if the browser is closed.
+
+### Phase 3: Push to Cloud Database (Online)
+At the end of a shift, the worker connects back to WiFi and presses **"Push to Cloud Database"**.
+1. The frontend extracts all offline scans from IndexedDB and sends them via a POST payload to the FastAPI backend.
+2. The backend connects to the remote **TiDB Serverless** MySQL database.
+3. Because serverless databases aggressively sleep idle connections, SQLAlchemy is configured with `pool_pre_ping=True` and `pool_recycle=300` to automatically wake the database and ensure zero dropped connections.
+4. The records are saved to the `GarmentQRCode` table and can be viewed globally on the Master Dashboard.
 
 ---
 
-## 4. Methodology & How It Works
+## 4. Bypassing the Chinese Firewall (The Cloudflare Proxy)
+During deployment, the Qiaofei API (Huawei Cloud) rejected connection attempts from the Oracle Cloud (Tokyo) server with `Timeout 522` / `403` errors. This was caused by enterprise anti-bot filters blocking foreign cloud datacenter IP ranges. 
 
-### Step 1: Mobile Data Capture
-The frontend utilizes HTML5's `capture="environment"` attribute, allowing workers to seamlessly trigger their smartphone's rear camera directly from the web browser. The captured image is sent as a `multipart/form-data` payload to the FastAPI backend.
+To resolve this without migrating away from the free Oracle Cloud tier, a **Cloudflare Worker** was deployed:
+```javascript
+export default {
+  async fetch(request, env) {
+    const url = new URL(request.url);
+    const targetUrl = "https://saofeiapi.huole.cn" + url.pathname + url.search;
+    const modifiedRequest = new Request(targetUrl, {
+      method: request.method,
+      headers: request.headers,
+      body: request.method === "POST" ? request.body : null,
+      redirect: "follow"
+    });
+    return fetch(modifiedRequest);
+  },
+};
+```
+The Python backend in `qiaofei_sync.py` routes all requests to `https://dark-lab-2998.kallec.workers.dev`. Cloudflare acts as a transparent, highly-trusted edge node that proxies the payload to Qiaofei successfully, completely eliminating the IP block.
 
-### Step 2: Computer Vision Pipeline
-Once the image reaches the server, it passes through a dual-processing pipeline:
-1.  **QR Decoding:** PyZbar scans the image array for QR codes. If found, it decodes the payload (e.g., `tid=93069837`).
-2.  **AI Text Extraction:** The image is passed to RapidOCR, which analyzes the pixels, draws bounding boxes around text elements, and returns a sequential array of recognized text strings.
+---
 
-### Step 3: Dynamic Spatial NLP (Natural Language Processing)
-Because OCR models often split labels and values into separate, unpredictable "invisible boxes" (e.g., reading "Size:" and "L" as two entirely different elements), the system uses a custom **Dynamic Spatial Parser**. 
-*   The algorithm iterates through the OCR text blocks chronologically. 
-*   When it identifies a keyword (e.g., `款号` for Style No, or `尺码` for Size), it dynamically checks the immediate adjacent bounding boxes to capture the corresponding value.
-*   It utilizes advanced Regular Expressions (Regex) to clean up OCR noise (like dust interpreted as punctuation) and identifies complex, floating industry patterns (like `170/90A` for height/chest sizes) even if a label is missing entirely.
-
-### Step 4: Aggregation & Master QR Generation
-The parsed data is sent back to the frontend for human review. Once confirmed, the data is committed to the SQLite database and linked to a unique Collection ID. The Python `qrcode` library then dynamically generates a high-resolution Master QR Code image. Scanning this Master QR Code routes users to a public webpage displaying the aggregated data for the entire batch.
+## 5. Deployment Setup
+The application is deployed for free forever using:
+*   **Host:** Oracle Cloud (Ubuntu 22.04).
+*   **Manager:** Coolify (Automated Docker deployments from GitHub).
+*   **Domain:** `https://131.186.57.252.nip.io` (Provides free, automatic SSL certificates required by iOS Safari for accessing the camera without needing to purchase a domain name).
