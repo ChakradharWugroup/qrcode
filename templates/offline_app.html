@@ -12,7 +12,7 @@
     <link rel="apple-touch-icon" href="/static/icon.png">
     <script>
 
-      if ('serviceWorker' in navigator) {
+      if (',serviceWorker' in navigator) {
         navigator.serviceWorker.register('/static/sw.js');
       }
     </script>
@@ -255,7 +255,7 @@
         async function saveMasterData(data) {
             const db = await dbPromise;
             if (!db) {
-                try { localStorage.setItem('master_tickets', JSON.stringify(data)); } catch(e) { alert("Phone memory full. Cannot save."); }
+                try { localStorage.setItem('master_tickets', JSON.stringify(data)); } catch(e) { alert(i18n[currentLang]['msg_phone_full']); }
                 return;
             }
             return new Promise((resolve) => {
@@ -289,6 +289,24 @@
                 title: '100% Offline QR App',
                   downloading: 'Downloading...',
                   clear_warning: 'ERROR! {count} pending tickets have not been uploaded.',
+                  msg_phone_full: 'Phone memory full. Cannot save.',
+                  msg_box_empty: 'Box is empty! Please scan items first.',
+                  msg_sync_ok: 'Successfully downloaded {count} tickets!',
+                  msg_sync_err: 'Sync Error: ',
+                  msg_server_err: 'Server Error: ',
+                  msg_network_err: 'Network error: ',
+                  msg_camera_err: 'Camera error. Please allow camera permissions in Settings.',
+                  msg_scan_qty: 'Please scan a QR code and enter a quantity!',
+                  msg_duplicate: 'DUPLICATE: This QR code is already in this box!',
+                  msg_offline: 'You are offline. Please connect to the internet first.',
+                  msg_all_synced: 'All items are already uploaded to the cloud!',
+                  msg_push_ok: 'Successfully uploaded {count} tickets to the cloud!',
+                  msg_push_err: 'Server error. Could not upload to cloud.',
+                  msg_push_net: 'Network error. Make sure the server is reachable.',
+                  msg_db_cleared: 'Local data cleared from phone.',
+                  msg_db_empty: 'No data found!',
+                  msg_confirm_clear: 'All data has been safely uploaded. Clear phone memory to start fresh?',
+
                   time_today: 'Today',
                   time_yesterday: 'Yesterday',
                   time_week: 'This Week',
@@ -342,6 +360,24 @@
                   downloading: '下载中...',
                   downloading: '下載中...',
                   clear_warning: '錯誤！{count} 張菲票尚未上傳',
+                  msg_phone_full: '手機儲存已滿，無法儲存。',
+                  msg_box_empty: '箱子是空的！請先掃描菲票。',
+                  msg_sync_ok: '成功下載 {count} 張菲票！',
+                  msg_sync_err: '同步錯誤：',
+                  msg_server_err: '伺服器錯誤：',
+                  msg_network_err: '網路錯誤：',
+                  msg_camera_err: '相機錯誤。請在設定中允許相機權限。',
+                  msg_scan_qty: '請掃描二維碼並輸入數量！',
+                  msg_duplicate: '重複警告：此二維碼已在此箱子中！',
+                  msg_offline: '您目前處於離線狀態，請先連線網路。',
+                  msg_all_synced: '所有資料已上傳至雲端！',
+                  msg_push_ok: '成功上傳 {count} 張菲票至雲端！',
+                  msg_push_err: '伺服器錯誤，無法上傳至雲端。',
+                  msg_push_net: '網路錯誤，請確認伺服器可以存取。',
+                  msg_db_cleared: '本地資料已從手機清除。',
+                  msg_db_empty: '沒有資料！',
+                  msg_confirm_clear: '所有資料已安全上傳。是否清除手機記憶體以開始新工作？',
+
                   time_today: '今天',
                   time_yesterday: '昨天',
                   time_week: '本周',
@@ -395,6 +431,23 @@
                   downloading: '下载中...',
                   downloading: '下載中...',
                   clear_warning: '錯誤！{count} 張菲票尚未上傳',
+                  msg_phone_full: '手机存储已满，无法保存。',
+                  msg_box_empty: '筱子是空的！请先扫描菲票。',
+                  msg_sync_ok: '成功下载 {count} 张菲票！',
+                  msg_sync_err: '同步错误：',
+                  msg_server_err: '服务器错误：',
+                  msg_network_err: '网络错误：',
+                  msg_camera_err: '摄像头错误。请在设置中允许摄像头权限。',
+                  msg_scan_qty: '请扫描二维码并输入数量！',
+                  msg_duplicate: '重复警告：此二维码已在此筱子中！',
+                  msg_offline: '您当前处于离线状态，请先连接网络。',
+                  msg_all_synced: '所有数据已上传到云端！',
+                  msg_push_ok: '成功上传 {count} 张菲票到云端！',
+                  msg_push_err: '服务器错误，无法上传到云端。',
+                  msg_push_net: '网络错误，请确认服务器可以访问。',
+                  msg_db_cleared: '本地数据已从手机中清除。',
+                  msg_db_empty: '没有数据！',
+                  msg_confirm_clear: '所有数据已安全上传。是否清除手机内存以开始新工作？',
                   time_today: '今天',
                   time_yesterday: '昨天',
                   time_week: '本週',
@@ -650,7 +703,7 @@ try {
             const boxItems = localDB.filter(item => item.box === currentBox);
             
             if (boxItems.length === 0) {
-                alert("Cut Order is empty! Please scan items first.");
+                alert(i18n[currentLang]['msg_box_empty']);
                 return;
             }
 
@@ -730,15 +783,15 @@ try {
                     localStorage.removeItem('master_tickets');
 
                         updateSyncSummary();
-                        alert(`Successfully synced ${data.total_tickets} tickets from Qiaofei!`);
+                        alert(i18n[currentLang]['msg_sync_ok'].replace("{count}", data.total_tickets));
                     } else {
-                        alert("Error: " + data.error);
+                        alert(i18n[currentLang]['msg_sync_err'] + data.error);
                     }
                 } else {
-                    const errText = await response.text(); alert("Server Error " + response.status + ": " + errText);
+                    const errText = await response.text(); alert(i18n[currentLang]['msg_server_err'] + response.status + ": " + errText);
                 }
             } catch (err) {
-                alert("Network error: " + err.message);
+                alert(i18n[currentLang]['msg_network_err'] + err.message);
             } finally {
                 btn.innerHTML = originalHtml;
                 btn.disabled = false;
@@ -765,7 +818,7 @@ try {
             
             html5QrcodeScanner.start({ facingMode: "environment" }, config, onScanSuccess)
             .catch(err => {
-                alert("Camera error. Please allow camera permissions.");
+                alert(i18n[currentLang]['msg_camera_err']);
                 document.getElementById('start-scan-btn').style.display = 'flex';
             });
         }
@@ -843,13 +896,13 @@ try {
             const qty = document.getElementById('input-quantity').value.trim();
 
             if (!qr || !qty) {
-                alert("Please scan a QR and enter a quantity!");
+                alert(i18n[currentLang]['msg_scan_qty']);
                 return;
             }
 
             const isDuplicate = localDB.some(item => item.qr === qr && item.box === currentBox);
             if (isDuplicate) {
-                alert("DUPLICATE WARNING: This QR code is already in this box!");
+                alert(i18n[currentLang]['msg_duplicate']);
                 return;
             }
             
@@ -937,12 +990,12 @@ try {
 
         async function pushToCloud() {
             if (!navigator.onLine) {
-                alert("You are currently offline. Please connect to the internet first.");
+                alert(i18n[currentLang]['msg_offline']);
                 return;
             }
             const unsynced = localDB.filter(item => !item.synced);
             if (unsynced.length === 0) {
-                alert("All items are already pushed to the cloud!");
+                alert(i18n[currentLang]['msg_all_synced']);
                 return;
             }
             
@@ -966,15 +1019,15 @@ try {
                     }
                     localDB.forEach(item => { item.synced = true; });
                     localStorage.setItem('offline_qr_db', JSON.stringify(localDB));
-                    alert(`Successfully pushed ${unsynced.length} items to the cloud!`);
+                    alert(i18n[currentLang]['msg_push_ok'].replace("{count}", unsynced.length));
                     updateDashboardStats();
                 } else {
                     const errText = await response.text();
-                    alert("Server error. Could not push to cloud.\n\nDetails: " + errText);
+                    alert(i18n[currentLang]['msg_push_err'] + "\n" + errText);
                     btn.innerHTML = originalText;
                 }
             } catch (e) {
-                alert("Network error. Make sure the server is reachable.");
+                alert(i18n[currentLang]['msg_push_net']);
                 document.getElementById('push-btn').innerHTML = `<svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"></path></svg> <span data-i18n="push_cloud">Push to Cloud Database</span>`;
             }
         }
@@ -985,18 +1038,18 @@ try {
                 alert(`STOP! You have ${unsynced.length} pending items that have not been pushed to the cloud database.\n\nPlease connect to the internet and click "<span data-i18n="push_cloud">Push to Cloud Database</span>" before clearing your data!`);
                 return;
             }
-            if(confirm("All data has been safely pushed to the cloud. Are you sure you want to clear the phone's memory to start fresh?")) {
+            if(confirm(i18n[currentLang]['msg_confirm_clear'])) {
                 localDB = [];
                 localStorage.setItem('offline_qr_db', JSON.stringify(localDB));
                 updateDashboardStats();
                 localStorage.removeItem('current_box');
-                alert("Database cleared from phone.");
+                alert(i18n[currentLang]['msg_db_cleared']);
             }
         }
 
         function exportCSV() {
             if (localDB.length === 0) {
-                alert("Database is empty!");
+                alert(i18n[currentLang]['msg_db_empty']);
                 return;
             }
             
