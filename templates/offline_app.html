@@ -464,6 +464,16 @@ try { currentLang = localStorage.getItem('app_lang') || 'en'; } catch(e) {}
                     el.innerHTML = i18n[lang][key];
                 }
             });
+            
+            // Re-translate dynamically-set text (sync summary)
+            const summaryEl = document.getElementById('sync-summary-text');
+            if (summaryEl) {
+                const currentText = summaryEl.innerText;
+                const numMatch = currentText.match(/\d+/);
+                if (numMatch) {
+                    summaryEl.innerText = numMatch[0] + ' ' + (i18n[lang]['tickets_ready'] || 'Tickets Downloaded');
+                }
+            }
 
             document.querySelectorAll('[data-i18n-placeholder]').forEach(el => {
                 const key = el.getAttribute('data-i18n-placeholder');
