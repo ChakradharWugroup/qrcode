@@ -3,17 +3,41 @@ __pycache__/
 *.py[cod]
 *$py.class
 
-# Environments
+# Virtual environments
 .env
+.env.*
 .venv
 env/
 venv/
 ENV/
 
-# Database
+# Database files
 *.db
 *.sqlite3
+
+# SSL certificates (generated at runtime inside Docker)
+cert.pem
+key.pem
+*.pem
 
 # OS generated files
 .DS_Store
 Thumbs.db
+
+# Development/scratch scripts (not part of the application)
+fix_*.py
+add_*.py
+update_*.py
+bump_*.py
+apply_*.py
+inject_*.py
+force_*.py
+check_*.py
+temp_*.js
+test_script_*.js
+full_test.js
+script_extract.txt
+
+# IDE/editor config
+.vscode/
+.idea/
