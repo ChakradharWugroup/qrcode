@@ -24,11 +24,15 @@ from fastapi.responses import JSONResponse
 
 router = APIRouter()
 
-# --- Configuration (loaded from environment variables) ---
-QIAOFEI_MOBILE = os.getenv("QIAOFEI_MOBILE", "")
-QIAOFEI_PASSWORD = os.getenv("QIAOFEI_PASSWORD", "")
-QIAOFEI_AREA_CODE = os.getenv("QIAOFEI_AREA_CODE", "886")
-QIAOFEI_PROXY_URL = os.getenv("QIAOFEI_PROXY_URL", "")
+# --- Configuration (read from environment at request time, not module import) ---
+# This ensures load_dotenv() in main.py always runs first.
+def _get_config() -> dict:
+    return {
+        "mobile": os.getenv("QIAOFEI_MOBILE", ""),
+        "password": os.getenv("QIAOFEI_PASSWORD", ""),
+        "area_code": os.getenv("QIAOFEI_AREA_CODE", "886"),
+        "proxy_url": os.getenv("QIAOFEI_PROXY_URL", ""),
+    }
 
 # Max orders to process per sync request (prevents server timeouts)
 MAX_ORDERS_PER_SYNC = 2000
@@ -56,13 +60,13 @@ def _get_start_date(timeframe: str) -> str:
     return (today - datetime.timedelta(days=days)).strftime("%Y-%m-%d")
 
 
-def _fetch_tickets_for_order(order: dict, params: dict) -> dict:
+def _fetch_tickets_for_order(order: dict, params: dict, proxy_url: str) -> dict:
     """Fetch all tickets for a single cut order. Returns a dict keyed by ticket_id."""
     cut_order_id = order.get("cut_order_id")
     if not cut_order_id:
         return {}
 
-    url = f"{QIAOFEI_PROXY_URL}/common/cut_order/get_cut_order_ticket_list"
+    url = f"{proxy_url}/common/cut_order/get_cut_order_ticket_list"
     try:
         resp = requests.post(
             url,
@@ -107,7 +111,8 @@ async def sync_qiaofei(request: Request, timeframe: str = "3months"):
     Returns:
         JSON with total_tickets count and a tickets dict keyed by ticket_id.
     """
-    if not QIAOFEI_MOBILE or not QIAOFEI_PASSWORD or not QIAOFEI_PROXY_URL:
+    cfg = _get_config()
+    if not cfg["mobile"] or not cfg["password"] or not cfg["proxy_url"]:
         return JSONResponse(
             status_code=500,
             content={"error": "Qiaofei credentials not configured. Set QIAOFEI_MOBILE, QIAOFEI_PASSWORD, and QIAOFEI_PROXY_URL environment variables."},
@@ -117,12 +122,12 @@ async def sync_qiaofei(request: Request, timeframe: str = "3months"):
         # Step 1: Authenticate
         session = requests.Session()
         login_payload = {
-            "mobile": QIAOFEI_MOBILE,
-            "password": hashlib.md5(QIAOFEI_PASSWORD.encode()).hexdigest(),
-            "area_code": QIAOFEI_AREA_CODE,
+            "mobile": cfg["mobile"],
+            "password": hashlib.md5(cfg["password"].encode()).hexdigest(),
+            "area_code": cfg["area_code"],
         }
         login_resp = session.post(
-            f"{QIAOFEI_PROXY_URL}/common/login/login",
+            f"{cfg['proxy_url']}/common/login/login",
             json=login_payload,
             headers=QIAOFEI_HEADERS,
         )
@@ -146,7 +151,7 @@ async def sync_qiaofei(request: Request, timeframe: str = "3months"):
         # Step 2: Fetch production order list
         start_date = _get_start_date(timeframe)
         list_resp = session.post(
-            f"{QIAOFEI_PROXY_URL}/common/cut_order/get_product_list",
+            f"{cfg['proxy_url']}/common/cut_order/get_product_list",
             params=params,
             json={"page": 1, "page_size": 2000},
             headers=QIAOFEI_HEADERS,
@@ -170,7 +175,7 @@ async def sync_qiaofei(request: Request, timeframe: str = "3months"):
         all_tickets = {}
         with concurrent.futures.ThreadPoolExecutor(max_workers=40) as executor:
             futures = [
-                executor.submit(_fetch_tickets_for_order, order, params)
+                executor.submit(_fetch_tickets_for_order, order, params, cfg['proxy_url'])
                 for order in filtered_orders
             ]
             for future in concurrent.futures.as_completed(futures):
