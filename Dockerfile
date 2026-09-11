@@ -20,5 +20,5 @@ COPY . .
 # Generate a self-signed certificate for HTTPS
 RUN openssl req -x509 -newkey rsa:4096 -nodes -out cert.pem -keyout key.pem -days 3650 -subj "/CN=141.147.165.228"
 
-# Run Uvicorn with SSL enabled
-CMD uvicorn main:app --host 0.0.0.0 --port ${PORT:-7860} --ssl-keyfile key.pem --ssl-certfile cert.pem
+# Run Uvicorn in standard HTTP mode (Coolify handles the SSL automatically)
+CMD uvicorn main:app --host 0.0.0.0 --port ${PORT:-7860}
