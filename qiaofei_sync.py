@@ -195,14 +195,8 @@ def _run_sync_task(task_id: str, timeframe: str):
             for future in concurrent.futures.as_completed(futures):
                 all_tickets.update(future.result())
 
-        return JSONResponse(
-            status_code=200,
-            content={
-                "success": True,
-                "total_tickets": len(all_tickets),
-                "tickets": all_tickets,
-            },
-        )
+        SYNC_TASKS[task_id] = {"status": "done", "tickets": all_tickets}
+        return
 
     except Exception as e:
         SYNC_TASKS[task_id] = {"status": "error", "error": f"{str(e)}"}
