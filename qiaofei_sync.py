@@ -19,7 +19,10 @@ import traceback
 import concurrent.futures
 
 import requests
-from fastapi import APIRouter, Request
+from fastapi import APIRouter, Request, BackgroundTasks
+import uuid
+
+SYNC_TASKS = {}
 from fastapi.responses import JSONResponse
 
 router = APIRouter()
@@ -100,7 +103,24 @@ def _fetch_tickets_for_order(order: dict, params: dict, proxy_url: str) -> dict:
 
 
 @router.post("/api/sync_qiaofei")
-async def sync_qiaofei(request: Request, timeframe: str = "3months"):
+async def sync_qiaofei(request: Request, background_tasks: BackgroundTasks, timeframe: str = "3months"):
+    task_id = str(uuid.uuid4())
+    SYNC_TASKS[task_id] = {"status": "running", "tickets": {}}
+    background_tasks.add_task(_run_sync_task, task_id, timeframe)
+    return JSONResponse({"task_id": task_id, "status": "running"})
+
+@router.get("/api/sync_qiaofei/status")
+async def sync_qiaofei_status(task_id: str):
+    if task_id not in SYNC_TASKS:
+        return JSONResponse({"status": "error", "error": "Task not found"}, status_code=404)
+    task_data = SYNC_TASKS[task_id]
+    if task_data["status"] == "done":
+        return JSONResponse({"status": "done", "total_tickets": len(task_data["tickets"]), "tickets": task_data["tickets"]})
+    if task_data["status"] == "error":
+        return JSONResponse({"status": "error", "error": task_data.get("error")}, status_code=400)
+    return JSONResponse({"status": "running"})
+
+def _run_sync_task(task_id: str, timeframe: str):
     """
     Authenticate with Qiaofei and download all production tickets for the given timeframe.
 
@@ -113,10 +133,8 @@ async def sync_qiaofei(request: Request, timeframe: str = "3months"):
     """
     cfg = _get_config()
     if not cfg["mobile"] or not cfg["password"] or not cfg["proxy_url"]:
-        return JSONResponse(
-            status_code=500,
-            content={"error": "Qiaofei credentials not configured. Set QIAOFEI_MOBILE, QIAOFEI_PASSWORD, and QIAOFEI_PROXY_URL environment variables."},
-        )
+        SYNC_TASKS[task_id] = {"status": "error", "error": "Qiaofei credentials not configured. Set QIAOFEI_MOBILE, QIAOFEI_PASSWORD, and QIAOFEI_PROXY_URL environment variables."}
+        return
 
     try:
         # Step 1: Authenticate
@@ -134,10 +152,8 @@ async def sync_qiaofei(request: Request, timeframe: str = "3months"):
         login_data = login_resp.json()
 
         if str(login_data.get("code")) not in ["1", "200"]:
-            return JSONResponse(
-                status_code=400,
-                content={"error": f"Login failed: {login_data.get('msg')}"},
-            )
+            SYNC_TASKS[task_id] = {"status": "error", "error": f"Login failed: {login_data.get('msg')}"}
+            return
 
         auth = login_data["data"]
         params = {
@@ -159,10 +175,8 @@ async def sync_qiaofei(request: Request, timeframe: str = "3months"):
         list_data = list_resp.json()
 
         if str(list_data.get("code")) not in ["1", "200"]:
-            return JSONResponse(
-                status_code=400,
-                content={"error": "Failed to fetch production order list"},
-            )
+            SYNC_TASKS[task_id] = {"status": "error", "error": "Failed to fetch production order list"}
+            return
 
         # Filter orders by cut_time >= start_date
         all_orders = list_data.get("data", {}).get("list", [])
@@ -191,7 +205,5 @@ async def sync_qiaofei(request: Request, timeframe: str = "3months"):
         )
 
     except Exception as e:
-        return JSONResponse(
-            status_code=500,
-            content={"error": str(e), "traceback": traceback.format_exc()},
-        )
+        SYNC_TASKS[task_id] = {"status": "error", "error": f"{str(e)}"}
+        return
