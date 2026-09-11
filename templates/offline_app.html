@@ -61,7 +61,7 @@
             </div>
             <button id="sync-master-btn" class="w-2/3 bg-indigo-600 text-white py-4 rounded-lg font-bold text-xl hover:bg-indigo-700 transition shadow-lg flex justify-center items-center">
                 <svg class="w-6 h-6 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path></svg>
-                <span data-i18n="sync_qiaofei">Sync Qiaofei Data</span>
+                <span data-i18n="sync_qiaofei">Download Tickets</span>
             </button>
         </div>
 
@@ -79,7 +79,7 @@
 
         <button onclick="createNewBox()" class="w-full bg-blue-600 text-white py-4 rounded-lg font-bold text-xl hover:bg-blue-700 transition shadow-lg flex justify-center items-center">
             <svg class="w-6 h-6 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
-            <span data-i18n="start_new_box">Start New Box</span>
+            <span data-i18n="start_new_box">New Box</span>
         </button>
 
         <div class="bg-white p-6 rounded-lg shadow-md">
@@ -776,6 +776,12 @@ try {
             try {
                 const timeframe = document.getElementById('sync-timeframe') ? document.getElementById('sync-timeframe').value : 'month';
                 const startRes = await fetch(`/api/sync_qiaofei?timeframe=${timeframe}`, { method: 'POST' });
+                
+                if (!startRes.ok) {
+                    const errText = await startRes.text();
+                    throw new Error(`Server returned ${startRes.status}: ${errText}`);
+                }
+                
                 const startData = await startRes.json();
                 
                 if (startData.status !== 'running') {
@@ -787,7 +793,12 @@ try {
                 
                 while (true) {
                     const statusRes = await fetch(`/api/sync_qiaofei/status?task_id=${taskId}`);
+                    if (!statusRes.ok) {
+                        const errText = await statusRes.text();
+                        throw new Error(`Status check failed ${statusRes.status}: ${errText}`);
+                    }
                     data = await statusRes.json();
+                    
                     if (data.status === 'done') {
                         break;
                     } else if (data.status === 'error') {
@@ -796,39 +807,32 @@ try {
                     await new Promise(r => setTimeout(r, 5000));
                 }
                 
-                if (data.status === 'done') {
-                        
-                        // Save to IndexedDB to bypass the 5MB browser limit
-                        await saveMasterData(data.tickets);
-                        
-                        // Clear the old localStorage to free up space
-                        localStorage.removeItem('master_tickets');
+                // Save to IndexedDB to bypass the 5MB browser limit
+                await saveMasterData(data.tickets);
+                
+                // Clear the old localStorage to free up space
+                localStorage.removeItem('master_tickets');
 
-                        // Save sync metadata (date and duration)
-                        const endTime = performance.now();
-                        const durationSecs = Math.round((endTime - startTime) / 1000);
-                        const now = new Date();
-                        const dateStr = now.getFullYear() + "-" + 
-                                        String(now.getMonth() + 1).padStart(2, '0') + "-" + 
-                                        String(now.getDate()).padStart(2, '0') + " " + 
-                                        String(now.getHours() % 12 || 12) + ":" + 
-                                        String(now.getMinutes()).padStart(2, '0') + 
-                                        (now.getHours() >= 12 ? "pm" : "am");
-                                        
-                        localStorage.setItem('sync_metadata', JSON.stringify({
-                            dateStr: dateStr,
-                            duration: durationSecs,
-                            timeframeLabel: timeframe === '3months' ? '3 months' : timeframe
-                        }));
+                // Save sync metadata (date and duration)
+                const endTime = performance.now();
+                const durationSecs = Math.round((endTime - startTime) / 1000);
+                const now = new Date();
+                const dateStr = now.getFullYear() + "-" + 
+                                String(now.getMonth() + 1).padStart(2, '0') + "-" + 
+                                String(now.getDate()).padStart(2, '0') + " " + 
+                                String(now.getHours() % 12 || 12) + ":" + 
+                                String(now.getMinutes()).padStart(2, '0') + 
+                                (now.getHours() >= 12 ? "pm" : "am");
+                                
+                localStorage.setItem('sync_metadata', JSON.stringify({
+                    dateStr: dateStr,
+                    duration: durationSecs,
+                    timeframeLabel: timeframe === '3months' ? '3 months' : timeframe
+                }));
 
-                        updateSyncSummary();
-                        alert(i18n[currentLang]['msg_sync_ok'].replace("{count}", data.total_tickets));
-                    } else {
-                        alert(i18n[currentLang]['msg_sync_err'] + data.error);
-                    }
-                } else {
-                    const errText = await response.text(); alert(i18n[currentLang]['msg_server_err'] + response.status + ": " + errText);
-                }
+                updateSyncSummary();
+                alert(i18n[currentLang]['msg_sync_ok'].replace("{count}", data.total_tickets));
+
             } catch (err) {
                 alert(i18n[currentLang]['msg_network_err'] + err.message);
             } finally {
@@ -838,7 +842,7 @@ try {
             }
         });
 
-        // --- Start New Box Logic ---
+        // --- New Box Logic ---
         function startScanner() {
             document.getElementById('start-scan-btn').style.display = 'none';
             html5QrcodeScanner = new Html5Qrcode("reader");
