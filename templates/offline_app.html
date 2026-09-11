@@ -513,9 +513,15 @@ try { currentLang = localStorage.getItem('app_lang') || 'en'; } catch(e) {}
             const summaryEl = document.getElementById('sync-summary-text');
             if (summaryEl) {
                 const currentText = summaryEl.innerText;
-                const numMatch = currentText.match(/\d+/);
+                const numMatch = currentText.match(/^\d+/);
                 if (numMatch) {
-                    summaryEl.innerText = numMatch[0] + ' ' + (i18n[lang]['tickets_ready'] || 'Tickets Downloaded');
+                    let newText = numMatch[0] + ' ' + (i18n[lang]['tickets_ready'] || 'Tickets Downloaded');
+                    // preserve the metadata suffix like "(2026-09-11 10:30pm...)"
+                    const metaMatch = currentText.match(/\(.*\)/);
+                    if (metaMatch) {
+                        newText += ' ' + metaMatch[0];
+                    }
+                    summaryEl.innerText = newText;
                 }
             }
 
@@ -562,7 +568,17 @@ try {
                     
                     if (keys.length > 0) {
                         summaryDiv.classList.remove('hidden');
-                        document.getElementById('sync-summary-text').innerText = `${keys.length} ${i18n[currentLang]["tickets_ready"]}`;
+                        let summaryText = `${keys.length} ${i18n[currentLang]["tickets_ready"]}`;
+                        
+                        try {
+                            const metaStr = localStorage.getItem('sync_metadata');
+                            if (metaStr) {
+                                const meta = JSON.parse(metaStr);
+                                summaryText += ` (${meta.dateStr} for ${meta.timeframeLabel}, took ${meta.duration}s)`;
+                            }
+                        } catch (e) { console.error(e); }
+                        
+                        document.getElementById('sync-summary-text').innerText = summaryText;
                         
                         let detailsHtml = '<div class="overflow-x-auto"><table class="w-full text-left border-collapse"><thead><tr class="bg-indigo-100"><th class="p-1 border-b">TID</th><th class="p-1 border-b">Style</th><th class="p-1 border-b">Color</th><th class="p-1 border-b">Size</th><th class="p-1 border-b">Qty</th></tr></thead><tbody>';
                         
@@ -610,24 +626,23 @@ try {
             
             if (uniqueBoxes.length === 0) {
                 listContainer.innerHTML = `<p class="text-gray-500 text-sm italic">${i18n[currentLang]["no_boxes"]}</p>`;
-                return;
+            } else {
+                uniqueBoxes.forEach(box => {
+                    const count = boxMap[box];
+                    const div = document.createElement('div');
+                    div.className = "flex justify-between items-center p-3 bg-gray-50 border rounded";
+                    div.innerHTML = `
+                        <div>
+                            <p class="font-bold text-blue-800">${box}</p>
+                            <p class="text-xs text-gray-600">${count} <span data-i18n="items_scanned"></span></p>
+                        </div>
+                        <button onclick="resumeBox('${box}')" class="bg-blue-100 text-blue-700 px-4 py-2 rounded text-sm font-bold border border-blue-300 hover:bg-blue-200">
+                            ${i18n[currentLang]["open_btn"]}
+                        </button>
+                    `;
+                    listContainer.appendChild(div);
+                });
             }
-            
-            uniqueBoxes.forEach(box => {
-                const count = boxMap[box];
-                const div = document.createElement('div');
-                div.className = "flex justify-between items-center p-3 bg-gray-50 border rounded";
-                div.innerHTML = `
-                    <div>
-                        <p class="font-bold text-blue-800">${box}</p>
-                        <p class="text-xs text-gray-600">${count} <span data-i18n="items_scanned"></span></p>
-                    </div>
-                    <button onclick="resumeBox('${box}')" class="bg-blue-100 text-blue-700 px-4 py-2 rounded text-sm font-bold border border-blue-300 hover:bg-blue-200">
-                        ${i18n[currentLang]["open_btn"]}
-                    </button>
-                `;
-                listContainer.appendChild(div);
-            });
 
             // Render Global History Table
             const tbody = document.getElementById('global-history-body');
@@ -756,9 +771,11 @@ try {
             btn.innerHTML = `<span class="i18n" data-en="Downloading..." data-zh="下载中...">${i18n[currentLang]['downloading'] || 'Downloading...'}</span>`;
             btn.disabled = true;
             
+            const startTime = performance.now();
+            
             try {
-                            const timeframe = document.getElementById('sync-timeframe') ? document.getElementById('sync-timeframe').value : 'month';
-            const response = await fetch(`/api/sync_qiaofei?timeframe=${timeframe}`, {
+                const timeframe = document.getElementById('sync-timeframe') ? document.getElementById('sync-timeframe').value : 'month';
+                const response = await fetch(`/api/sync_qiaofei?timeframe=${timeframe}`, {
                     method: 'POST',
                 });
                 
@@ -766,11 +783,28 @@ try {
                     const data = await response.json();
                     if (data.success) {
                         
-                    // Save to IndexedDB to bypass the 5MB browser limit
-                    await saveMasterData(data.tickets);
-                    
-                    // Clear the old localStorage to free up space
-                    localStorage.removeItem('master_tickets');
+                        // Save to IndexedDB to bypass the 5MB browser limit
+                        await saveMasterData(data.tickets);
+                        
+                        // Clear the old localStorage to free up space
+                        localStorage.removeItem('master_tickets');
+
+                        // Save sync metadata (date and duration)
+                        const endTime = performance.now();
+                        const durationSecs = Math.round((endTime - startTime) / 1000);
+                        const now = new Date();
+                        const dateStr = now.getFullYear() + "-" + 
+                                        String(now.getMonth() + 1).padStart(2, '0') + "-" + 
+                                        String(now.getDate()).padStart(2, '0') + " " + 
+                                        String(now.getHours() % 12 || 12) + ":" + 
+                                        String(now.getMinutes()).padStart(2, '0') + 
+                                        (now.getHours() >= 12 ? "pm" : "am");
+                                        
+                        localStorage.setItem('sync_metadata', JSON.stringify({
+                            dateStr: dateStr,
+                            duration: durationSecs,
+                            timeframeLabel: timeframe === '3months' ? '3 months' : timeframe
+                        }));
 
                         updateSyncSummary();
                         alert(i18n[currentLang]['msg_sync_ok'].replace("{count}", data.total_tickets));
@@ -1011,6 +1045,7 @@ try {
                     localStorage.setItem('offline_qr_db', JSON.stringify(localDB));
                     alert(i18n[currentLang]['msg_push_ok'].replace("{count}", unsynced.length));
                     updateDashboardStats();
+                    btn.innerHTML = originalText;
                 } else {
                     const errText = await response.text();
                     alert(i18n[currentLang]['msg_push_err'] + "\n" + errText);
@@ -1018,7 +1053,7 @@ try {
                 }
             } catch (e) {
                 alert(i18n[currentLang]['msg_push_net']);
-                document.getElementById('push-btn').innerHTML = `<svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"></path></svg> <span data-i18n="push_cloud">Push to Cloud Database</span>`;
+                btn.innerHTML = originalText;
             }
         }
 
