@@ -775,13 +775,28 @@ try {
             
             try {
                 const timeframe = document.getElementById('sync-timeframe') ? document.getElementById('sync-timeframe').value : 'month';
-                const response = await fetch(`/api/sync_qiaofei?timeframe=${timeframe}`, {
-                    method: 'POST',
-                });
+                const startRes = await fetch(`/api/sync_qiaofei?timeframe=${timeframe}`, { method: 'POST' });
+                const startData = await startRes.json();
                 
-                if (response.ok) {
-                    const data = await response.json();
-                    if (data.success) {
+                if (startData.status !== 'running') {
+                    throw new Error(startData.error || 'Failed to start sync');
+                }
+                
+                const taskId = startData.task_id;
+                let data = null;
+                
+                while (true) {
+                    const statusRes = await fetch(`/api/sync_qiaofei/status?task_id=${taskId}`);
+                    data = await statusRes.json();
+                    if (data.status === 'done') {
+                        break;
+                    } else if (data.status === 'error') {
+                        throw new Error(data.error || 'Unknown server error during sync');
+                    }
+                    await new Promise(r => setTimeout(r, 5000));
+                }
+                
+                if (data.status === 'done') {
                         
                         // Save to IndexedDB to bypass the 5MB browser limit
                         await saveMasterData(data.tickets);
